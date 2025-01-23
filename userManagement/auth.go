@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"text/template"
+	"time"
 
 	"github.com/gofrs/uuid/v5"
 	_ "github.com/mattn/go-sqlite3"
@@ -137,6 +138,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("username")
 	password := r.FormValue("password")
 	if len(username) == 0 || len(password) == 0 {
+		fmt.Println("empty username or password")
 		// handleErrorPage(w, r, BadRequestError)
 		return
 	}
@@ -227,4 +229,27 @@ func sessionGenerator(w http.ResponseWriter, userId int) {
 		HttpOnly: true,
 		Secure:   true,
 	})
+}
+
+// Middleware to check for valid user session in cookie
+func CheckLogin(w http.ResponseWriter, r *http.Request) (bool, int, error) {
+	// Get the cookie named "session_token"
+	cookie, err := r.Cookie("session_token")
+	if err != nil {
+		return false, -1, nil
+	}
+
+	sessionToken := cookie.Value
+
+	// Check if the cookie has expired
+	if time.Now().After(cookie.Expires) {
+		// Cookie expired, redirect to login
+		return false, -1, nil
+	}
+
+	userId, selectError := sessionSelect(sessionToken)
+	if selectError != nil {
+		return false, -1, selectError
+	}
+	return true, userId, nil
 }

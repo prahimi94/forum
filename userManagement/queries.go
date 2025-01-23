@@ -107,6 +107,21 @@ func sessionInsert(userId int) (string, time.Time, error) {
 	return sessionToken, expirationTime, nil
 }
 
+func sessionSelect(sessionToken string) (int, error) {
+	db := openDBConnection()
+	defer db.Close() // Close the connection after the function finishes
+
+	var userId int
+	err := db.QueryRow("SELECT user_id FROM sessions WHERE session_token = ?", sessionToken).Scan(&userId)
+	if err != nil {
+		// Handle other database errors
+		log.Fatal(err)
+		return -1, errors.New("database error")
+	}
+
+	return userId, nil
+}
+
 func generateUuid() (string, error) {
 	// Create a Version 4 UUID.
 	u2, err := uuid.NewV4()
