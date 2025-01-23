@@ -1,44 +1,47 @@
 -- SQLite
-DROP TABLE "comment_likes";
-DROP TABLE "post_likes";
-DROP TABLE "comments";
-DROP TABLE "post_categories";
-DROP TABLE "posts";
-DROP TABLE "categories";
-DROP TABLE "users";
+DROP TABLE IF EXISTS "comment_likes";
+DROP TABLE IF EXISTS "post_likes";
+DROP TABLE IF EXISTS "comments";
+DROP TABLE IF EXISTS "post_categories";
+DROP TABLE IF EXISTS "posts";
+DROP TABLE IF EXISTS "categories";
+DROP TABLE IF EXISTS "users";
+DROP TABLE IF EXISTS  "sessions";
 
 CREATE TABLE "categories" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
   "name" TEXT NOT NULL,
   "status" TEXT NOT NULL CHECK ("status" IN ('enable', 'disable', 'delete')) DEFAULT 'enable',
-  "created_at" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "created_by" INTEGER NOT NULL,
-  "updated_at" TEXT,
+  "updated_at" DATETIME,
   "updated_by" INTEGER,
   FOREIGN KEY (created_by) REFERENCES "users" ("id"),
   FOREIGN KEY (updated_by) REFERENCES "users" ("id")
 );
 CREATE TABLE "users" (
   "id" INTEGER PRIMARY KEY,
+  "uuid" TEXT NOT NULL UNIQUE,
   "type" TEXT NOT NULL CHECK ("type" IN ('admin', 'normal_user')) DEFAULT 'normal_user',
   "name" TEXT,
   "username" TEXT UNIQUE,
   "email" TEXT UNIQUE,
   "password" TEXT,
   "status" TEXT NOT NULL CHECK ("status" IN ('enable', 'disable', 'delete')) DEFAULT 'enable',
-  "created_at" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "updated_at" TEXT,
+  "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" DATETIME,
   "updated_by" INTEGER,
   FOREIGN KEY (updated_by) REFERENCES "users" ("id")
 );
 CREATE TABLE "posts" (
   "id" INTEGER PRIMARY KEY,
+  "uuid" TEXT NOT NULL UNIQUE,
   "subject" TEXT NOT NULL,
   "description" TEXT NOT NULL,
   "status" TEXT NOT NULL CHECK ("status" IN ('enable', 'disable', 'delete')) DEFAULT 'enable',
-  "created_at" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "user_id" INTEGER NOT NULL,
-  "updated_at" TEXT,
+  "updated_at" DATETIME,
   "updated_by" INTEGER,
   FOREIGN KEY (user_id) REFERENCES "users" ("id"),
   FOREIGN KEY (updated_by) REFERENCES "users" ("id")
@@ -50,8 +53,8 @@ CREATE TABLE "post_likes" (
   "post_id" INTEGER NOT NULL,
   "user_id" INTEGER NOT NULL,
   "status" TEXT NOT NULL CHECK ("status" IN ('enable', 'delete')) DEFAULT 'enable',
-  "created_at" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "updated_at" TEXT,
+  "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" DATETIME,
   "updated_by" INTEGER,
   FOREIGN KEY (user_id) REFERENCES "users" ("id"),
   FOREIGN KEY (post_id) REFERENCES "posts" ("id"),
@@ -63,9 +66,9 @@ CREATE TABLE "post_categories" (
   "post_id" INTEGER NOT NULL,
   "category_id" INTEGER NOT NULL,
   "status" TEXT NOT NULL CHECK ("status" IN ('enable', 'disable', 'delete')) DEFAULT 'enable',
-  "created_at" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "created_by" INTEGER NOT NULL,
-  "updated_at" TEXT,
+  "updated_at" DATETIME,
   "updated_by" INTEGER,
   FOREIGN KEY (created_by) REFERENCES "users" ("id"),
   FOREIGN KEY (updated_by) REFERENCES "users" ("id"),
@@ -79,8 +82,8 @@ CREATE TABLE "comments" (
   "description" TEXT NOT NULL,
   "user_id" INTEGER NOT NULL,
   "status" TEXT NOT NULL CHECK ("status" IN ('enable', 'disable', 'delete')) DEFAULT 'enable',
-  "created_at" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "updated_at" TEXT,
+  "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" DATETIME,
   "updated_by" INTEGER,
   FOREIGN KEY (user_id) REFERENCES "users" ("id"),
   FOREIGN KEY (updated_by) REFERENCES "users" ("id"),
@@ -93,13 +96,22 @@ CREATE TABLE "comment_likes" (
   "comment_id" INTEGER NOT NULL,
   "user_id" INTEGER NOT NULL,
   "status" TEXT NOT NULL CHECK ("status" IN ('enable', 'delete')) DEFAULT 'enable',
-  "created_at" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "updated_at" TEXT,
+  "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" DATETIME,
   "updated_by" INTEGER,
   FOREIGN KEY (user_id) REFERENCES "users" ("id"),
   FOREIGN KEY (updated_by) REFERENCES "users" ("id"),
   FOREIGN KEY (comment_id) REFERENCES "comments" ("id")
 );
 
-INSERT INTO users(type,name,username,password, email)
-VALUES('admin', 'admin', 'admin', '$2a$10$DN.v/NkfQjmPaTTz15x0E.u8l2R9.HnB12DpDVMdRPeQZDfMwovSa', 'admin@admin');
+CREATE TABLE "sessions" (
+  "id" INTEGER PRIMARY KEY,
+  "session_token" TEXT NOT NULL UNIQUE,
+  "user_id" INTEGER NOT NULL,
+  "expires_at" DATETIME NOT NULL,
+  "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES "users" ("id")
+);
+
+INSERT INTO users(uuid, type,name,username,password, email)
+VALUES('67921bdd-8458-800e-b9d4-065a43242cd3', 'admin', 'admin', 'admin', '$2a$10$DN.v/NkfQjmPaTTz15x0E.u8l2R9.HnB12DpDVMdRPeQZDfMwovSa', 'admin@admin');

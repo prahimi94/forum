@@ -7,11 +7,14 @@ import (
 	"net/http"
 	"text/template"
 
+	"github.com/gofrs/uuid/v5"
 	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/crypto/bcrypt"
 )
 
 const publicUrl = "frontend/public/"
+
+var u1 = uuid.Must(uuid.NewV4())
 
 func AuthHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -68,16 +71,19 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	// }
 
 	// Insert a record while checking duplicates
-	err = insertUser(username, email, string(hashedPassword))
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+	userId, insertError := insertUser(username, email, string(hashedPassword))
+	if insertError != nil {
+		if errors.Is(insertError, sql.ErrNoRows) {
 			fmt.Println("User already exists!")
 		} else {
-			fmt.Println("Error inserting user:", err)
+			fmt.Println("Error inserting user:", insertError)
 		}
+		return
 	} else {
 		fmt.Println("User added successfully!")
 	}
+
+	sessionGenerator(w, userId)
 
 	// // Query the records
 	// rows, err := db.Query(`SELECT id, name, age FROM users;`)
@@ -150,18 +156,19 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	// }
 
 	// Insert a record while checking duplicates
-	authStatus, authError := authenticateUser(username, password)
-	if err != nil {
+	authStatus, userId, authError := authenticateUser(username, password)
+	if authError != nil {
 		// if errors.Is(err, sql.ErrNoRows) {
 		// 	fmt.Println("User already exists!")
 		// } else {
-		// 	fmt.Println("Error inserting user:", err)
+		// 	fmt.Println("Error authentication user:", err)
 		// }
 		fmt.Println(authError.Error())
 	} else if authStatus {
 		fmt.Println("User logged in successfully!")
 	}
 
+	sessionGenerator(w, userId)
 	// // Query the records
 	// rows, err := db.Query(`SELECT id, name, age FROM users;`)
 	// if err != nil {
@@ -197,4 +204,27 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
+}
+
+func sessionGenerator(w http.ResponseWriter, userId int) {
+	sessionToken, expirationTime, insertError := sessionInsert(userId)
+	if insertError != nil {
+		// if errors.Is(err, sql.ErrNoRows) {
+		// 	fmt.Println("User already exists!")
+		// } else {
+		// 	fmt.Println("Error inserting user:", err)
+		// }
+		fmt.Println(insertError.Error())
+		return
+	}
+	fmt.Println("session created successfully!")
+
+	// Set the session token in a cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_token",
+		Value:    sessionToken,
+		Expires:  expirationTime,
+		HttpOnly: true,
+		Secure:   true,
+	})
 }
