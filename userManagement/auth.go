@@ -21,6 +21,21 @@ func AuthHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		return
 	}
+
+	loginStatus, userId, checkLoginError := CheckLogin(r)
+	fmt.Println(loginStatus)
+	fmt.Println(userId)
+	fmt.Println(checkLoginError)
+	if checkLoginError != nil {
+		//internal server error
+		fmt.Println("error checking the error")
+		return
+	}
+	if loginStatus {
+		fmt.Println("logged in userid is: ", userId)
+		return
+	}
+
 	tmpl, err := template.ParseFiles(
 		publicUrl + "authPage.html",
 	)
@@ -36,6 +51,17 @@ func AuthHandler(w http.ResponseWriter, r *http.Request) {
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		fmt.Println("error method not allowed")
+		return
+	}
+
+	loginStatus, userId, checkLoginError := CheckLogin(r)
+	if checkLoginError != nil {
+		//internal server error
+		fmt.Println("error checking the error")
+		return
+	}
+	if loginStatus {
+		fmt.Println("logged in userid is: ", userId)
 		return
 	}
 	err := r.ParseForm()
@@ -128,6 +154,18 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("error method not allowed")
 		return
 	}
+
+	loginStatus, userId, checkLoginError := CheckLogin(r)
+	if checkLoginError != nil {
+		//internal server error
+		fmt.Println("error checking the error")
+		return
+	}
+	if loginStatus {
+		fmt.Println("logged in userid is: ", userId)
+		return
+	}
+
 	err := r.ParseForm()
 	if err != nil {
 		fmt.Println("error Parsing the form")
@@ -197,7 +235,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	// }
 
 	tmpl, err := template.ParseFiles(
-		publicUrl + "authPage.html",
+		publicUrl + "home.html",
 	)
 	if err != nil {
 		return
@@ -210,6 +248,8 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 func sessionGenerator(w http.ResponseWriter, userId int) {
 	sessionToken, expirationTime, insertError := sessionInsert(userId)
+	fmt.Println("expirationTime is: ")
+	fmt.Println(expirationTime)
 	if insertError != nil {
 		// if errors.Is(err, sql.ErrNoRows) {
 		// 	fmt.Println("User already exists!")
@@ -232,7 +272,7 @@ func sessionGenerator(w http.ResponseWriter, userId int) {
 }
 
 // Middleware to check for valid user session in cookie
-func CheckLogin(w http.ResponseWriter, r *http.Request) (bool, int, error) {
+func CheckLogin(r *http.Request) (bool, int, error) {
 	// Get the cookie named "session_token"
 	cookie, err := r.Cookie("session_token")
 	if err != nil {
@@ -240,16 +280,20 @@ func CheckLogin(w http.ResponseWriter, r *http.Request) (bool, int, error) {
 	}
 
 	sessionToken := cookie.Value
+	userId, expirationTime, selectError := sessionSelect(sessionToken)
+	if selectError != nil {
+		return false, -1, selectError
+	}
+	fmt.Println("expirationTime")
+	fmt.Println(expirationTime)
 
 	// Check if the cookie has expired
-	if time.Now().After(cookie.Expires) {
+	if time.Now().After(expirationTime) {
 		// Cookie expired, redirect to login
 		return false, -1, nil
 	}
 
-	userId, selectError := sessionSelect(sessionToken)
-	if selectError != nil {
-		return false, -1, selectError
-	}
+	fmt.Println("helloe")
+
 	return true, userId, nil
 }

@@ -107,19 +107,20 @@ func sessionInsert(userId int) (string, time.Time, error) {
 	return sessionToken, expirationTime, nil
 }
 
-func sessionSelect(sessionToken string) (int, error) {
+func sessionSelect(sessionToken string) (int, time.Time, error) {
 	db := openDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	var userId int
-	err := db.QueryRow("SELECT user_id FROM sessions WHERE session_token = ?", sessionToken).Scan(&userId)
+	var expirationTime time.Time
+	err := db.QueryRow("SELECT user_id, expires_at FROM sessions WHERE session_token = ?", sessionToken).Scan(&userId, &expirationTime)
 	if err != nil {
 		// Handle other database errors
 		log.Fatal(err)
-		return -1, errors.New("database error")
+		return -1, time.Time{}, errors.New("database error")
 	}
 
-	return userId, nil
+	return userId, expirationTime, nil
 }
 
 func generateUuid() (string, error) {
