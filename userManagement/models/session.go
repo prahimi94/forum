@@ -18,7 +18,7 @@ type Session struct {
 }
 
 func InsertSession(session *Session) (*Session, error) {
-	db := openDBConnection()
+	db := utils.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	// Generate UUID for the user if not already set
@@ -48,7 +48,7 @@ func InsertSession(session *Session) (*Session, error) {
 }
 
 func SelectSession(sessionToken string) (int, time.Time, error) {
-	db := openDBConnection()
+	db := utils.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	var userId int

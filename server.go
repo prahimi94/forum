@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"forum/backend"
+	forumManagementModels "forum/forumManagement/models"
 	userManagementControllers "forum/userManagement/controllers"
 	"log"
 	"net/http"
@@ -21,6 +23,19 @@ func main() {
 	// forumManagement.InsertPost("first post", "first post description", []int{1, 2}, 1)
 	// forumManagement.UpdatePost(1, "first post", "first post description updated", []int{2, 3}, 1)
 	// forumManagement.UpdateStatusPost(1, "enable", 1)
+	// post, err := forumManagementModels.ReadPostById(2)
+	// if err != nil {
+	// 	fmt.Println("Error:", err)
+	// } else {
+	// 	fmt.Println("Post:", post)
+	// 	if len(post.Categories) == 0 {
+	// 		fmt.Println("No categories associated with this post.")
+	// 	}
+	// }
+
+	categories, err := forumManagementModels.ReadAllCategories()
+	fmt.Println(categories)
+	fmt.Println(err)
 
 	//start the server on port 8080
 	log.Println("Starting server on: http://localhost:8080")

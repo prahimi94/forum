@@ -2,6 +2,8 @@ package models
 
 import (
 	"database/sql"
+	"fmt"
+	userManagementModels "forum/userManagement/models"
 	"forum/utils"
 	"log"
 	"time"
@@ -9,34 +11,21 @@ import (
 
 // Post struct represents the user data model
 type Post struct {
-	ID          int       `json:"id"`
-	UUID        string    `json:"uuid"`
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	UserId      int       `json:"user_id"`
-	Status      string    `json:"status"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	UpdatedBy   int       `json:"updated_by"`
-}
-
-func openDBConnection() *sql.DB {
-	db, err := sql.Open("sqlite3", "./db/forum.db")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Enable foreign key constraints
-	_, err = db.Exec("PRAGMA foreign_keys = ON;")
-	if err != nil {
-		log.Fatal("Failed to enable foreign key constraints:", err)
-	}
-
-	return db
+	ID          int                       `json:"id"`
+	UUID        string                    `json:"uuid"`
+	Title       string                    `json:"title"`
+	Description string                    `json:"description"`
+	UserId      int                       `json:"user_id"`
+	Status      string                    `json:"status"`
+	CreatedAt   time.Time                 `json:"created_at"`
+	UpdatedAt   *time.Time                `json:"updated_at"`
+	UpdatedBy   *int                      `json:"updated_by"`
+	User        userManagementModels.User `json:"user"`       // Embedded user data
+	Categories  []Category                `json:"categories"` // List of categories related to the post
 }
 
 func InsertPost(post *Post, categoryIds []int) (int, error) {
-	db := openDBConnection()
+	db := utils.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	// Start a transaction for atomicity
@@ -86,7 +75,7 @@ func InsertPost(post *Post, categoryIds []int) (int, error) {
 }
 
 func UpdatePost(post *Post, categories []int, user_id int) error {
-	db := openDBConnection()
+	db := utils.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	// Start a transaction for atomicity
@@ -132,7 +121,7 @@ func UpdatePost(post *Post, categories []int, user_id int) error {
 }
 
 func UpdateStatusPost(post_id int, status string, user_id int) error {
-	db := openDBConnection()
+	db := utils.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	// Start a transaction for atomicity
@@ -171,6 +160,215 @@ func UpdateStatusPost(post_id int, status string, user_id int) error {
 	return nil
 }
 
-func ReadPosts() {
+func ReadAllPosts() ([]Post, error) {
+	db := utils.OpenDBConnection()
+	defer db.Close() // Close the connection after the function finishes
 
+	// Query the records
+	rows, selectError := db.Query(`
+        SELECT p.id as post_id, p.uuid as post_uuid, p.title as post_title, p.description as post_description, p.status as post_status, p.created_at as post_created_at, p.updated_at as post_updated_at, p.updated_by as post_updated_by,
+			u.id as user_id, u.name as user_name, u.username as user_username, u.email as user_email,
+			c.id as category_id, c.name as category_name
+		FROM posts p
+			INNER JOIN users u
+				ON p.user_id = u.id
+			LEFT JOIN post_categories pc
+				ON p.id = pc.post_id
+				AND pc.status = 'enable'
+			LEFT JOIN categories c
+				ON pc.category_id = c.id
+				AND c.status = 'enable'
+		WHERE p.status != 'delete'
+			AND u.status != 'delete';
+    `)
+	if selectError != nil {
+		return nil, selectError
+	}
+	defer rows.Close()
+
+	var posts []Post
+	// Map to track posts by their ID to avoid duplicates
+	postMap := make(map[int]*Post)
+
+	for rows.Next() {
+		var post Post
+		var user userManagementModels.User
+		var category Category
+
+		// Scan the post and user data
+		err := rows.Scan(
+			&post.ID, &post.UUID, &post.Title, &post.Description, &post.Status,
+			&post.CreatedAt, &post.UpdatedAt, &post.UpdatedBy, &post.UserId,
+			&user.Name, &user.Username, &user.Email,
+			&category.ID, &category.Name,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("error scanning row: %v", err)
+		}
+
+		// Check if the post already exists in the postMap
+		if existingPost, found := postMap[post.ID]; found {
+			// If the post exists, append the category to the existing post's Categories
+			existingPost.Categories = append(existingPost.Categories, category)
+		} else {
+			// If the post doesn't exist in the map, add it and initialize the Categories field
+			post.User = user
+			post.Categories = []Category{category}
+			postMap[post.ID] = &post
+		}
+	}
+
+	// Check for any errors during row iteration
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("row iteration error: %v", err)
+	}
+
+	// Convert the map of posts into a slice
+	for _, post := range postMap {
+		posts = append(posts, *post)
+	}
+
+	return posts, nil
+}
+
+func ReadPostsByUserId(userId int) ([]Post, error) {
+	db := utils.OpenDBConnection()
+	defer db.Close() // Close the connection after the function finishes
+
+	// Query the records
+	rows, selectError := db.Query(`
+        SELECT p.id as post_id, p.uuid as post_uuid, p.title as post_title, p.description as post_description, p.status as post_status, p.created_at as post_created_at, p.updated_at as post_updated_at, p.updated_by as post_updated_by,
+			u.id as user_id, u.name as user_name, u.username as user_username, u.email as user_email,
+			c.id as category_id, c.name as category_name
+		FROM posts p
+			INNER JOIN users u
+				ON p.user_id = u.id
+				AND u.id = ?
+			LEFT JOIN post_categories pc
+				ON p.id = pc.post_id
+				AND pc.status = 'enable'
+			LEFT JOIN categories c
+				ON pc.category_id = c.id
+				AND c.status = 'enable'
+		WHERE p.status != 'delete'
+			AND u.status != 'delete';
+    `, userId)
+	if selectError != nil {
+		return nil, selectError
+	}
+	defer rows.Close()
+
+	var posts []Post
+	// Map to track posts by their ID to avoid duplicates
+	postMap := make(map[int]*Post)
+
+	for rows.Next() {
+		var post Post
+		var user userManagementModels.User
+		var category Category
+
+		// Scan the post and user data
+		err := rows.Scan(
+			&post.ID, &post.UUID, &post.Title, &post.Description, &post.Status,
+			&post.CreatedAt, &post.UpdatedAt, &post.UpdatedBy, &post.UserId,
+			&user.Name, &user.Username, &user.Email,
+			&category.ID, &category.Name,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("error scanning row: %v", err)
+		}
+
+		// Check if the post already exists in the postMap
+		if existingPost, found := postMap[post.ID]; found {
+			// If the post exists, append the category to the existing post's Categories
+			existingPost.Categories = append(existingPost.Categories, category)
+		} else {
+			// If the post doesn't exist in the map, add it and initialize the Categories field
+			post.User = user
+			post.Categories = []Category{category}
+			postMap[post.ID] = &post
+		}
+	}
+
+	// Check for any errors during row iteration
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("row iteration error: %v", err)
+	}
+
+	// Convert the map of posts into a slice
+	for _, post := range postMap {
+		posts = append(posts, *post)
+	}
+
+	return posts, nil
+}
+
+func ReadPostById(postId int) (Post, error) {
+	db := utils.OpenDBConnection()
+	defer db.Close() // Close the connection after the function finishes
+
+	// Query the records
+	rows, selectError := db.Query(`
+        SELECT p.id as post_id, p.uuid as post_uuid, p.title as post_title, p.description as post_description, p.status as post_status, p.created_at as post_created_at, p.updated_at as post_updated_at, p.updated_by as post_updated_by,
+			u.id as user_id, u.name as user_name, u.username as user_username, u.email as user_email,
+			c.id as category_id, c.name as category_name
+		FROM posts p
+			INNER JOIN users u
+				ON p.user_id = u.id
+				AND p.id = ?
+			LEFT JOIN post_categories pc
+				ON p.id = pc.post_id
+				AND pc.status = 'enable'
+			LEFT JOIN categories c
+				ON pc.category_id = c.id
+				AND c.status = 'enable'
+		WHERE p.status != 'delete'
+			AND u.status != 'delete';
+    `, postId)
+	if selectError != nil {
+		return Post{}, selectError
+	}
+	defer rows.Close()
+
+	var post Post
+	var user userManagementModels.User
+	var categories []Category
+
+	// Scan the records
+	for rows.Next() {
+		var category Category
+
+		err := rows.Scan(
+			&post.ID, &post.UUID, &post.Title, &post.Description, &post.Status,
+			&post.CreatedAt, &post.UpdatedAt, &post.UpdatedBy, &post.UserId,
+			&user.Name, &user.Username, &user.Email,
+			&category.ID, &category.Name,
+		)
+		if err != nil {
+			return Post{}, fmt.Errorf("error scanning row: %v", err)
+		}
+
+		// Assign user to post
+		if post.UserId == 0 { // If this is the first time we're encountering the post
+			post.User = user
+		}
+
+		// Append category to post categories list
+		categories = append(categories, category)
+	}
+
+	// If no rows were returned, the post doesn't exist
+	if post.ID == 0 {
+		return Post{}, fmt.Errorf("post with ID %d not found", postId)
+	}
+
+	// Assign categories to the post
+	post.Categories = categories
+
+	// Check for any errors during row iteration
+	if err := rows.Err(); err != nil {
+		return Post{}, fmt.Errorf("row iteration error: %v", err)
+	}
+
+	return post, nil
 }

@@ -104,31 +104,6 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	sessionGenerator(w, r, userId)
 
-	// // Query the records
-	// rows, err := db.Query(`SELECT id, name, age FROM users;`)
-	// if err != nil {
-	// 	fmt.Println("Error querying records:", err)
-	// 	return
-	// }
-	// defer rows.Close()
-
-	// fmt.Println("Users:")
-	// for rows.Next() {
-	// 	var id int
-	// 	var name string
-	// 	var age int
-	// 	err = rows.Scan(&id, &name, &age)
-	// 	if err != nil {
-	// 		fmt.Println("Error scanning record:", err)
-	// 		return
-	// 	}
-	// 	fmt.Printf("ID: %d, Name: %s, Age: %d\n", id, name, age)
-	// }
-
-	// if err = rows.Err(); err != nil {
-	// 	fmt.Println("Row iteration error:", err)
-	// }
-
 	tmpl, err := template.ParseFiles(
 		publicUrl + "authPage.html",
 	)

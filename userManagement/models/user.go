@@ -22,20 +22,11 @@ type User struct {
 	Status    string    `json:"status"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-	UpdatedBy time.Time `json:"updated_by"`
-}
-
-func openDBConnection() *sql.DB {
-	db, err := sql.Open("sqlite3", "./db/forum.db")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return db
+	UpdatedBy int       `json:"updated_by"`
 }
 
 func InsertUser(user *User) (int, error) {
-	db := openDBConnection()
+	db := utils.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	// Generate UUID for the user if not already set
@@ -71,7 +62,7 @@ func InsertUser(user *User) (int, error) {
 
 func AuthenticateUser(username, password string) (bool, int, error) {
 	// Open SQLite database
-	db := openDBConnection()
+	db := utils.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	// Query to retrieve the hashed password stored in the database for the given username
