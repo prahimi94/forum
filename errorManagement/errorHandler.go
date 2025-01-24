@@ -51,10 +51,10 @@ var (
 
 func HandleErrorPage(w http.ResponseWriter, r *http.Request, errorPageData ErrorPageData) {
 	tmpl, err := template.ParseFiles(
-		publicUrl+"errors.html",
-		publicUrl+"templates/header.html",
-		publicUrl+"templates/menu.html",
-		publicUrl+"templates/footer.html",
+		publicUrl + "errors.html",
+		// publicUrl+"templates/header.html",
+		// publicUrl+"templates/menu.html",
+		// publicUrl+"templates/footer.html",
 	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

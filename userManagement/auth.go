@@ -19,18 +19,14 @@ const publicUrl = "frontend/public/"
 var u1 = uuid.Must(uuid.NewV4())
 
 func AuthHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
+	if r.Method != http.MethodGet {
 		errorManagement.HandleErrorPage(w, r, errorManagement.MethodNotAllowedError)
 		return
 	}
 
 	loginStatus, userId, checkLoginError := CheckLogin(r)
-	fmt.Println(loginStatus)
-	fmt.Println(userId)
-	fmt.Println(checkLoginError)
 	if checkLoginError != nil {
-		//internal server error
-		fmt.Println("error checking the error")
+		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
 		return
 	}
 	if loginStatus {
@@ -42,24 +38,25 @@ func AuthHandler(w http.ResponseWriter, r *http.Request) {
 		publicUrl + "authPage.html",
 	)
 	if err != nil {
+		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
 		return
 	}
 	err = tmpl.Execute(w, nil)
 	if err != nil {
+		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
 		return
 	}
 }
 
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		fmt.Println("error method not allowed")
+		errorManagement.HandleErrorPage(w, r, errorManagement.MethodNotAllowedError)
 		return
 	}
 
 	loginStatus, userId, checkLoginError := CheckLogin(r)
 	if checkLoginError != nil {
-		//internal server error
-		fmt.Println("error checking the error")
+		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
 		return
 	}
 	if loginStatus {
@@ -68,51 +65,37 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	err := r.ParseForm()
 	if err != nil {
-		fmt.Println("error Parsing the form")
-		//handleErrorPage(w, r, BadRequestError)
+		errorManagement.HandleErrorPage(w, r, errorManagement.BadRequestError)
 		return
 	}
 	username := r.FormValue("username")
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 	if len(username) == 0 || len(email) == 0 || len(password) == 0 {
-		// handleErrorPage(w, r, BadRequestError)
+		errorManagement.HandleErrorPage(w, r, errorManagement.BadRequestError)
 		return
 	}
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		fmt.Println("Error hashing password:", err)
+		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
 		return
 	}
-
-	// // Create a table
-	// createTableQuery := `
-	//     CREATE TABLE IF NOT EXISTS users (
-	//         id INTEGER PRIMARY KEY AUTOINCREMENT,
-	//         name TEXT,
-	//         age INTEGER
-	//     );
-	// `
-	// _, err = db.Exec(createTableQuery)
-	// if err != nil {
-	// 	fmt.Println("Error creating table:", err)
-	// 	return
-	// }
 
 	// Insert a record while checking duplicates
 	userId, insertError := insertUser(username, email, string(hashedPassword))
 	if insertError != nil {
 		if errors.Is(insertError, sql.ErrNoRows) {
+			// todo show toast
 			fmt.Println("User already exists!")
 		} else {
-			fmt.Println("Error inserting user:", insertError)
+			errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
 		}
 		return
 	} else {
 		fmt.Println("User added successfully!")
 	}
 
-	sessionGenerator(w, userId)
+	sessionGenerator(w, r, userId)
 
 	// // Query the records
 	// rows, err := db.Query(`SELECT id, name, age FROM users;`)
@@ -143,24 +126,25 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		publicUrl + "authPage.html",
 	)
 	if err != nil {
+		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
 		return
 	}
 	err = tmpl.Execute(w, nil)
 	if err != nil {
+		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
 		return
 	}
 }
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		fmt.Println("error method not allowed")
+		errorManagement.HandleErrorPage(w, r, errorManagement.MethodNotAllowedError)
 		return
 	}
 
 	loginStatus, userId, checkLoginError := CheckLogin(r)
 	if checkLoginError != nil {
-		//internal server error
-		fmt.Println("error checking the error")
+		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
 		return
 	}
 	if loginStatus {
@@ -170,98 +154,49 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 	if err != nil {
-		fmt.Println("error Parsing the form")
-		//handleErrorPage(w, r, BadRequestError)
+		errorManagement.HandleErrorPage(w, r, errorManagement.BadRequestError)
 		return
 	}
 
 	username := r.FormValue("username")
 	password := r.FormValue("password")
 	if len(username) == 0 || len(password) == 0 {
-		fmt.Println("empty username or password")
-		// handleErrorPage(w, r, BadRequestError)
+		errorManagement.HandleErrorPage(w, r, errorManagement.BadRequestError)
 		return
 	}
-
-	// // Create a table
-	// createTableQuery := `
-	//     CREATE TABLE IF NOT EXISTS users (
-	//         id INTEGER PRIMARY KEY AUTOINCREMENT,
-	//         name TEXT,
-	//         age INTEGER
-	//     );
-	// `
-	// _, err = db.Exec(createTableQuery)
-	// if err != nil {
-	// 	fmt.Println("Error creating table:", err)
-	// 	return
-	// }
 
 	// Insert a record while checking duplicates
 	authStatus, userId, authError := authenticateUser(username, password)
 	if authError != nil {
-		// if errors.Is(err, sql.ErrNoRows) {
-		// 	fmt.Println("User already exists!")
-		// } else {
-		// 	fmt.Println("Error authentication user:", err)
-		// }
-		fmt.Println(authError.Error())
+		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
 	} else if authStatus {
 		fmt.Println("User logged in successfully!")
 	}
 
-	sessionGenerator(w, userId)
-	// // Query the records
-	// rows, err := db.Query(`SELECT id, name, age FROM users;`)
-	// if err != nil {
-	// 	fmt.Println("Error querying records:", err)
-	// 	return
-	// }
-	// defer rows.Close()
-
-	// fmt.Println("Users:")
-	// for rows.Next() {
-	// 	var id int
-	// 	var name string
-	// 	var age int
-	// 	err = rows.Scan(&id, &name, &age)
-	// 	if err != nil {
-	// 		fmt.Println("Error scanning record:", err)
-	// 		return
-	// 	}
-	// 	fmt.Printf("ID: %d, Name: %s, Age: %d\n", id, name, age)
-	// }
-
-	// if err = rows.Err(); err != nil {
-	// 	fmt.Println("Row iteration error:", err)
-	// }
+	sessionGenerator(w, r, userId)
 
 	tmpl, err := template.ParseFiles(
 		publicUrl + "home.html",
 	)
 	if err != nil {
+		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
 		return
 	}
 	err = tmpl.Execute(w, nil)
 	if err != nil {
+		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
 		return
 	}
 }
 
-func sessionGenerator(w http.ResponseWriter, userId int) {
+func sessionGenerator(w http.ResponseWriter, r *http.Request, userId int) {
 	sessionToken, expirationTime, insertError := sessionInsert(userId)
 	fmt.Println("expirationTime is: ")
 	fmt.Println(expirationTime)
 	if insertError != nil {
-		// if errors.Is(err, sql.ErrNoRows) {
-		// 	fmt.Println("User already exists!")
-		// } else {
-		// 	fmt.Println("Error inserting user:", err)
-		// }
-		fmt.Println(insertError.Error())
+		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
 		return
 	}
-	fmt.Println("session created successfully!")
 
 	// Set the session token in a cookie
 	http.SetCookie(w, &http.Cookie{
@@ -275,7 +210,6 @@ func sessionGenerator(w http.ResponseWriter, userId int) {
 
 // Middleware to check for valid user session in cookie
 func CheckLogin(r *http.Request) (bool, int, error) {
-	// Get the cookie named "session_token"
 	cookie, err := r.Cookie("session_token")
 	if err != nil {
 		return false, -1, nil
