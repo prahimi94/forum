@@ -1,0 +1,202 @@
+
+html {
+    background: radial-gradient(#000, #111);
+    color: white;
+    overflow: hidden;
+    height: 100%;
+    user-select: none;
+    font-family: Arial, sans-serif;
+}
+
+.static {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    margin: 0;
+    padding: 0;
+    top: -150px;
+    opacity: 0.10;
+    z-index: 250;
+    user-select: none;
+    user-drag: none;
+}
+
+.error {
+    text-align: center;
+    font-family: san-serif;
+    font-size: 95px;
+    font-style: italic;
+    text-align: center;
+    width: 100px;
+    height: 60px;
+    line-height: 60px;
+    margin: auto;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -60px;
+    right: 0;
+    animation: noise 5s linear infinite;
+    overflow: default;
+}
+
+.error:after {
+    font-family: sans-serif;
+    font-size: 100px;
+    font-style: italic;
+    text-align: center;
+    width: 150px;
+    height: 60px;
+    line-height: 60px;
+    margin: auto;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    opacity: 0;
+    color: blue;
+    animation: noise-1 .5s linear infinite;
+}
+
+#error-400:after{
+    content: '400';
+}
+
+#error-404 .error:after{
+    content: '404';
+}
+
+#error-405 .error:after{
+    content: '405';
+}
+
+#error-500:after{
+    content: '500';
+}
+
+.info {
+    text-align: center;
+    font-family: sans-serif;
+    font-size: 20px;
+    font-style: italic;
+    text-align: center;
+    width: 200px;
+    height: 60px;
+    line-height: 60px;
+    margin: auto;
+    position: absolute;
+    top: 140px;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    animation: noise-3 4s linear infinite;
+}
+p {
+    text-align: center;
+    font-size: 20px;
+    text-align: center;
+    width: 250px;
+    height: 60px;
+    /* line-height: 60px; */
+    margin: auto;
+    position: absolute;
+    top: 220px;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+.error:before {
+    font-family: sans-serif;
+    font-size: 100px;
+    font-style: italic;
+    text-align: center;
+    width: 100px;
+    height: 60px;
+    line-height: 60px;
+    margin: auto;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    opacity: 0;
+    color: red;
+    animation: noise-2 .5s linear infinite;
+}
+
+#error-400:before {
+    content: '400';
+}
+
+#error-404:before {
+    content: '404';
+}
+
+#error-405:before {
+    content: '405';
+}
+
+#error-500:before {
+    content: '500';
+}
+
+@keyframes noise-1 {
+    0%, 20%, 40%, 60%, 70%, 90% {opacity: 0;}
+    10% {opacity: .1;}
+    50% {opacity: .5; left: -10px;}
+    80% {opacity: .3;}
+    100% {opacity: .6; left: 2px;}
+}
+
+@keyframes noise-2 {
+    0%, 20%, 40%, 60%, 70%, 90% {opacity: 0;}
+    10% {opacity: .1;}
+    50% {opacity: .5; left: 10px;}
+    80% {opacity: .3;}
+    100% {opacity: .6; left: -2px;}
+}
+
+@keyframes noise {
+    0%, 3%, 5%, 42%, 44%, 100% {opacity: 1; transform: scaleY(1);}
+    4% {opacity: 1; transform: scaleY(1.7);}
+    45% {opacity: 1; transform: scaleX(1.5);}
+}
+
+@keyframes noise-3 {
+    0%,3%,5%,42%,44%, 48%,51%,100% {opacity: 1; transform: scaleY(1);}
+    4%, 50% {opacity: 1; transform: scaleY(4);}
+    /*45% {opacity: 1; transform: scaleX(10) rotate(60deg);}*/
+}
+
+.btnP{
+    padding-top: 40px;
+    text-align: center;
+    top: 300px;
+}
+.btnP .btn-submit{
+    /* padding: 10px 100px; */
+    text-decoration: none;
+}
+
+.btn-submit {
+    background: rgb(3,0,95);
+    /*background: -moz-linear-gradient(167deg, rgba(3,0,95,1) 0%, rgba(55,51,182,1) 100%);
+    background: -webkit-linear-gradient(167deg, rgba(3,0,95,1) 0%, rgba(55,51,182,1) 100%);
+    background: linear-gradient(167deg, rgba(3,0,95,1) 0%, rgba(55,51,182,1) 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#03005f",endColorstr="#3733b6",GradientType=1);*/
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    font-size: 1em;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    width: 100%;
+    box-shadow: 0px 0px 15px rgba(185, 216, 255, 0.3);
+}
+
+.btn-submit:hover {
+    background: rgb(55,51,182);
+}

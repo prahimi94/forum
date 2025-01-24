@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"forum/errorManagement"
 	"net/http"
 	"text/template"
 	"time"
@@ -18,7 +19,8 @@ const publicUrl = "frontend/public/"
 var u1 = uuid.Must(uuid.NewV4())
 
 func AuthHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
+	if r.Method != http.MethodPost {
+		errorManagement.HandleErrorPage(w, r, errorManagement.MethodNotAllowedError)
 		return
 	}
 
