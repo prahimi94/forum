@@ -36,7 +36,7 @@ CREATE TABLE "users" (
 CREATE TABLE "posts" (
   "id" INTEGER PRIMARY KEY,
   "uuid" TEXT NOT NULL UNIQUE,
-  "subject" TEXT NOT NULL,
+  "title" TEXT NOT NULL,
   "description" TEXT NOT NULL,
   "status" TEXT NOT NULL CHECK ("status" IN ('enable', 'disable', 'delete')) DEFAULT 'enable',
   "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -115,3 +115,6 @@ CREATE TABLE "sessions" (
 
 INSERT INTO users(uuid, type,name,username,password, email)
 VALUES('67921bdd-8458-800e-b9d4-065a43242cd3', 'admin', 'admin', 'admin', '$2a$10$DN.v/NkfQjmPaTTz15x0E.u8l2R9.HnB12DpDVMdRPeQZDfMwovSa', 'admin@admin');
+
+INSERT INTO categories (name, created_by)
+VALUES ('art', 1), ('science', 1), ('news', 1);

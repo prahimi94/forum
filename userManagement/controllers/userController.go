@@ -1,10 +1,11 @@
-package userManagement
+package controller
 
 import (
 	"database/sql"
 	"errors"
 	"fmt"
 	"forum/errorManagement"
+	"forum/userManagement/models"
 	"net/http"
 	"text/template"
 	"time"
@@ -81,8 +82,14 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user := &models.User{
+		Username: username,
+		Email:    email,
+		Password: string(hashedPassword),
+	}
+
 	// Insert a record while checking duplicates
-	userId, insertError := insertUser(username, email, string(hashedPassword))
+	userId, insertError := models.InsertUser(user)
 	if insertError != nil {
 		if errors.Is(insertError, sql.ErrNoRows) {
 			// todo show toast
@@ -166,7 +173,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Insert a record while checking duplicates
-	authStatus, userId, authError := authenticateUser(username, password)
+	authStatus, userId, authError := models.AuthenticateUser(username, password)
 	if authError != nil {
 		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
 	} else if authStatus {
@@ -190,9 +197,10 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func sessionGenerator(w http.ResponseWriter, r *http.Request, userId int) {
-	sessionToken, expirationTime, insertError := sessionInsert(userId)
-	fmt.Println("expirationTime is: ")
-	fmt.Println(expirationTime)
+	session := &models.Session{
+		UserId: userId,
+	}
+	session, insertError := models.InsertSession(session)
 	if insertError != nil {
 		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
 		return
@@ -201,8 +209,8 @@ func sessionGenerator(w http.ResponseWriter, r *http.Request, userId int) {
 	// Set the session token in a cookie
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_token",
-		Value:    sessionToken,
-		Expires:  expirationTime,
+		Value:    session.SessionToken,
+		Expires:  session.ExpiresAt,
 		HttpOnly: true,
 		Secure:   true,
 	})
@@ -216,7 +224,7 @@ func CheckLogin(r *http.Request) (bool, int, error) {
 	}
 
 	sessionToken := cookie.Value
-	userId, expirationTime, selectError := sessionSelect(sessionToken)
+	userId, expirationTime, selectError := models.SelectSession(sessionToken)
 	if selectError != nil {
 		return false, -1, selectError
 	}

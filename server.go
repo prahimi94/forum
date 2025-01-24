@@ -2,7 +2,7 @@ package main
 
 import (
 	"forum/backend"
-	"forum/userManagement"
+	userManagementControllers "forum/userManagement/controllers"
 	"log"
 	"net/http"
 )
@@ -14,9 +14,14 @@ func main() {
 
 	// Register route handlers
 	http.HandleFunc("/", backend.MainPageHandler)
-	http.HandleFunc("/auth/", userManagement.AuthHandler)
-	http.HandleFunc("/register", userManagement.RegisterHandler)
-	http.HandleFunc("/login", userManagement.LoginHandler)
+	http.HandleFunc("/auth/", userManagementControllers.AuthHandler)
+	http.HandleFunc("/register", userManagementControllers.RegisterHandler)
+	http.HandleFunc("/login", userManagementControllers.LoginHandler)
+
+	// forumManagement.InsertPost("first post", "first post description", []int{1, 2}, 1)
+	// forumManagement.UpdatePost(1, "first post", "first post description updated", []int{2, 3}, 1)
+	// forumManagement.UpdateStatusPost(1, "enable", 1)
+
 	//start the server on port 8080
 	log.Println("Starting server on: http://localhost:8080")
 	log.Println("Status ok: ", http.StatusOK)

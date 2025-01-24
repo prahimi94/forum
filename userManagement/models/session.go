@@ -1,0 +1,64 @@
+package models
+
+import (
+	"database/sql"
+	"errors"
+	"forum/utils"
+	"log"
+	"time"
+)
+
+// User struct represents the user data model
+type Session struct {
+	ID           int       `json:"id"`
+	SessionToken string    `json:"session_token"`
+	UserId       int       `json:"user_id"`
+	CreatedAt    time.Time `json:"created_at"`
+	ExpiresAt    time.Time `json:"expires_at"`
+}
+
+func InsertSession(session *Session) (*Session, error) {
+	db := openDBConnection()
+	defer db.Close() // Close the connection after the function finishes
+
+	// Generate UUID for the user if not already set
+	if session.SessionToken == "" {
+		uuidSessionTokenid, err := utils.GenerateUuid()
+		if err != nil {
+			return nil, err
+		}
+		session.SessionToken = uuidSessionTokenid
+	}
+
+	// Set session expiration time
+	session.ExpiresAt = time.Now().Add(12 * time.Hour)
+
+	insertQuery := `INSERT INTO sessions (session_token, user_id, expires_at) VALUES (?, ?, ?);`
+	_, insertErr := db.Exec(insertQuery, session.SessionToken, session.UserId, session.ExpiresAt)
+	if insertErr != nil {
+		// Check if the error is a SQLite constraint violation
+		if sqliteErr, ok := insertErr.(interface{ ErrorCode() int }); ok {
+			if sqliteErr.ErrorCode() == 19 { // SQLite constraint violation error code
+				return nil, sql.ErrNoRows // Return custom error to indicate a duplicate
+			}
+		}
+		return nil, insertErr
+	}
+	return session, nil
+}
+
+func SelectSession(sessionToken string) (int, time.Time, error) {
+	db := openDBConnection()
+	defer db.Close() // Close the connection after the function finishes
+
+	var userId int
+	var expirationTime time.Time
+	err := db.QueryRow("SELECT user_id, expires_at FROM sessions WHERE session_token = ?", sessionToken).Scan(&userId, &expirationTime)
+	if err != nil {
+		// Handle other database errors
+		log.Fatal(err)
+		return -1, time.Time{}, errors.New("database error")
+	}
+
+	return userId, expirationTime, nil
+}
