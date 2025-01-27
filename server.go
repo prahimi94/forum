@@ -1,9 +1,7 @@
 package main
 
 import (
-	"fmt"
-	"forum/backend"
-	forumManagementModels "forum/forumManagement/models"
+	forumManagementControllers "forum/forumManagement/controllers"
 	userManagementControllers "forum/userManagement/controllers"
 	"log"
 	"net/http"
@@ -15,8 +13,8 @@ func main() {
 	http.Handle("/img/", http.FileServer(http.Dir("frontend/public/")))
 
 	// Register route handlers
-	http.HandleFunc("/", backend.MainPageHandler)
-	http.HandleFunc("/auth/", userManagementControllers.AuthHandler)
+	http.HandleFunc("/", forumManagementControllers.MainPageHandler)
+	http.HandleFunc("/auth", userManagementControllers.AuthHandler)
 	http.HandleFunc("/register", userManagementControllers.RegisterHandler)
 	http.HandleFunc("/login", userManagementControllers.LoginHandler)
 
@@ -33,9 +31,9 @@ func main() {
 	// 	}
 	// }
 
-	categories, err := forumManagementModels.ReadAllCategories()
-	fmt.Println(categories)
-	fmt.Println(err)
+	// categories, err := forumManagementModels.ReadAllCategories()
+	// fmt.Println(categories)
+	// fmt.Println(err)
 
 	//start the server on port 8080
 	log.Println("Starting server on: http://localhost:8080")

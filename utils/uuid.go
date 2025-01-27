@@ -2,6 +2,7 @@ package utils
 
 import (
 	"log"
+	"strings"
 
 	"github.com/gofrs/uuid/v5"
 )
@@ -16,4 +17,13 @@ func GenerateUuid() (string, error) {
 	log.Printf("generated Version 4 UUID %v", u2)
 
 	return u2.String(), nil
+}
+
+func ExtractUUIDFromUrl(path string, desiredUrl string) (string, string) {
+	if strings.HasPrefix(path, "/"+desiredUrl+"/") {
+		id := strings.TrimPrefix(path, "/"+desiredUrl+"/")
+		return id, ""
+	} else {
+		return "", "not found"
+	}
 }

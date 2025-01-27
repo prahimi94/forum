@@ -203,16 +203,12 @@ func CheckLogin(r *http.Request) (bool, int, error) {
 	if selectError != nil {
 		return false, -1, selectError
 	}
-	fmt.Println("expirationTime")
-	fmt.Println(expirationTime)
 
 	// Check if the cookie has expired
 	if time.Now().After(expirationTime) {
 		// Cookie expired, redirect to login
 		return false, -1, nil
 	}
-
-	fmt.Println("helloe")
 
 	return true, userId, nil
 }
