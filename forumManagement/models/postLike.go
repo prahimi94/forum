@@ -27,7 +27,7 @@ func insertPostLike(postLike *PostLike) (int, error) {
 	defer db.Close() // Close the connection after the function finishes
 
 	insertQuery := `INSERT INTO post_likes (type, post_id, user_id) VALUES (?, ?, ?);`
-	result, insertErr := tx.Exec(insertQuery, postlike.Type, postlike.PostId, postlike.UserId)
+	result, insertErr := db.Exec(insertQuery, postLike.Type, postLike.PostId, postLike.UserId)
 	if insertErr != nil {
 		// Check if the error is a SQLite constraint violation
 		if sqliteErr, ok := insertErr.(interface{ ErrorCode() int }); ok {
