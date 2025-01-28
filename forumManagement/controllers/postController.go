@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"forum/errorManagement"
+	errorManagementControllers "forum/errorManagement/controllers"
 	"forum/forumManagement/models"
 	"forum/utils"
 	"log"
@@ -19,13 +19,13 @@ import (
 
 func ReadAllPosts(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		errorManagement.HandleErrorPage(w, r, errorManagement.MethodNotAllowedError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
 		return
 	}
 
 	loginStatus, userId, checkLoginError := userManagementControllers.CheckLogin(r)
 	if checkLoginError != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 	if loginStatus {
@@ -37,7 +37,7 @@ func ReadAllPosts(w http.ResponseWriter, r *http.Request) {
 
 	posts, err := models.ReadAllPosts()
 	if err != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 
@@ -45,26 +45,26 @@ func ReadAllPosts(w http.ResponseWriter, r *http.Request) {
 		publicUrl + "posts.html",
 	)
 	if err != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 
 	err = tmpl.Execute(w, posts)
 	if err != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 }
 
-func readPost(w http.ResponseWriter, r *http.Request) {
+func ReadPost(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		errorManagement.HandleErrorPage(w, r, errorManagement.MethodNotAllowedError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
 		return
 	}
 
 	loginStatus, userId, checkLoginError := userManagementControllers.CheckLogin(r)
 	if checkLoginError != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 	if loginStatus {
@@ -76,13 +76,13 @@ func readPost(w http.ResponseWriter, r *http.Request) {
 
 	uuid, errUrl := utils.ExtractUUIDFromUrl(r.URL.Path, "post")
 	if errUrl == "not found" {
-		errorManagement.HandleErrorPage(w, r, errorManagement.NotFoundError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.NotFoundError)
 		return
 	}
 
 	post, err := models.ReadPostByUUID(uuid)
 	if err != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 
@@ -90,26 +90,26 @@ func readPost(w http.ResponseWriter, r *http.Request) {
 		publicUrl + "post_details.html",
 	)
 	if err != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 
 	err = tmpl.Execute(w, post)
 	if err != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 }
 
-func createPost(w http.ResponseWriter, r *http.Request) {
+func CreatePost(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		errorManagement.HandleErrorPage(w, r, errorManagement.MethodNotAllowedError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
 		return
 	}
 
 	loginStatus, userId, checkLoginError := userManagementControllers.CheckLogin(r)
 	if checkLoginError != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 	if loginStatus {
@@ -123,26 +123,26 @@ func createPost(w http.ResponseWriter, r *http.Request) {
 		publicUrl + "new_post.html",
 	)
 	if err != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 
 	err = tmpl.Execute(w, nil)
 	if err != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 }
 
-func submitPost(w http.ResponseWriter, r *http.Request) {
+func SubmitPost(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		errorManagement.HandleErrorPage(w, r, errorManagement.MethodNotAllowedError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
 		return
 	}
 
 	loginStatus, userId, checkLoginError := userManagementControllers.CheckLogin(r)
 	if checkLoginError != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 	if loginStatus {
@@ -154,14 +154,14 @@ func submitPost(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 	if err != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.BadRequestError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
 	}
 	title := r.FormValue("title")
 	description := r.FormValue("description")
 	categories := r.FormValue("categories")
 	if len(title) == 0 || len(description) == 0 || len(categories) == 0 {
-		errorManagement.HandleErrorPage(w, r, errorManagement.BadRequestError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
 	}
 
@@ -185,7 +185,7 @@ func submitPost(w http.ResponseWriter, r *http.Request) {
 			// todo show toast
 			fmt.Println("Post already exists!")
 		} else {
-			errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
+			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		}
 		return
 	} else {

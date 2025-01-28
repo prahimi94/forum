@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"forum/errorManagement"
+	errorManagementControllers "forum/errorManagement/controllers"
 	"forum/userManagement/models"
 	"net/http"
 	"text/template"
@@ -15,23 +15,24 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-const publicUrl = "frontend/public/"
+const publicUrl = "userManagement/views/"
 
 var u1 = uuid.Must(uuid.NewV4())
 
 func AuthHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		errorManagement.HandleErrorPage(w, r, errorManagement.MethodNotAllowedError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
 		return
 	}
 
 	loginStatus, userId, checkLoginError := CheckLogin(r)
 	if checkLoginError != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 	if loginStatus {
 		fmt.Println("logged in userid is: ", userId)
+		RedirectToHome(w, r)
 		return
 	}
 
@@ -39,46 +40,47 @@ func AuthHandler(w http.ResponseWriter, r *http.Request) {
 		publicUrl + "authPage.html",
 	)
 	if err != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 	err = tmpl.Execute(w, nil)
 	if err != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 }
 
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		errorManagement.HandleErrorPage(w, r, errorManagement.MethodNotAllowedError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
 		return
 	}
 
 	loginStatus, userId, checkLoginError := CheckLogin(r)
 	if checkLoginError != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 	if loginStatus {
 		fmt.Println("logged in userid is: ", userId)
+		RedirectToHome(w, r)
 		return
 	}
 	err := r.ParseForm()
 	if err != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.BadRequestError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
 	}
 	username := r.FormValue("username")
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 	if len(username) == 0 || len(email) == 0 || len(password) == 0 {
-		errorManagement.HandleErrorPage(w, r, errorManagement.BadRequestError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
 	}
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 
@@ -95,7 +97,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 			// todo show toast
 			fmt.Println("User already exists!")
 		} else {
-			errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
+			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		}
 		return
 	} else {
@@ -104,71 +106,63 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	sessionGenerator(w, r, userId)
 
-	tmpl, err := template.ParseFiles(
-		publicUrl + "authPage.html",
-	)
-	if err != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
-		return
-	}
-	err = tmpl.Execute(w, nil)
-	if err != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
-		return
-	}
+	RedirectToHome(w, r)
 }
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		errorManagement.HandleErrorPage(w, r, errorManagement.MethodNotAllowedError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
 		return
 	}
 
 	loginStatus, userId, checkLoginError := CheckLogin(r)
 	if checkLoginError != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 	if loginStatus {
 		fmt.Println("logged in userid is: ", userId)
+		RedirectToHome(w, r)
 		return
 	}
 
 	err := r.ParseForm()
 	if err != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.BadRequestError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
 	}
 
 	username := r.FormValue("username")
 	password := r.FormValue("password")
 	if len(username) == 0 || len(password) == 0 {
-		errorManagement.HandleErrorPage(w, r, errorManagement.BadRequestError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
 	}
 
 	// Insert a record while checking duplicates
 	authStatus, userId, authError := models.AuthenticateUser(username, password)
 	if authError != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 	} else if authStatus {
 		fmt.Println("User logged in successfully!")
 	}
 
 	sessionGenerator(w, r, userId)
 
-	tmpl, err := template.ParseFiles(
-		publicUrl + "home.html",
-	)
-	if err != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
-		return
-	}
-	err = tmpl.Execute(w, nil)
-	if err != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
-		return
-	}
+	RedirectToHome(w, r)
+
+	// tmpl, err := template.ParseFiles(
+	// 	publicUrl + "home.html",
+	// )
+	// if err != nil {
+	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+	// 	return
+	// }
+	// err = tmpl.Execute(w, nil)
+	// if err != nil {
+	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+	// 	return
+	// }
 }
 
 func sessionGenerator(w http.ResponseWriter, r *http.Request, userId int) {
@@ -177,7 +171,7 @@ func sessionGenerator(w http.ResponseWriter, r *http.Request, userId int) {
 	}
 	session, insertError := models.InsertSession(session)
 	if insertError != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 
@@ -211,4 +205,12 @@ func CheckLogin(r *http.Request) (bool, int, error) {
 	}
 
 	return true, userId, nil
+}
+
+func RedirectToIndex(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/", http.StatusFound)
+}
+
+func RedirectToHome(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/home/", http.StatusFound)
 }

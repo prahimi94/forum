@@ -1,13 +1,9 @@
 package controller
 
 import (
-	"database/sql"
-	"errors"
 	"fmt"
-	"forum/errorManagement"
-	"forum/forumManagement/models"
+	errorManagementControllers "forum/errorManagement/controllers"
 	"net/http"
-	"text/template"
 
 	userManagementControllers "forum/userManagement/controllers"
 
@@ -16,13 +12,13 @@ import (
 
 func ReadAllComments(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		errorManagement.HandleErrorPage(w, r, errorManagement.MethodNotAllowedError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
 		return
 	}
 
 	loginStatus, userId, checkLoginError := userManagementControllers.CheckLogin(r)
 	if checkLoginError != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 	if loginStatus {
@@ -32,36 +28,36 @@ func ReadAllComments(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("user is not logged in")
 	}
 
-	comments, err := models.ReadAllComments()
-	if err != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
-		return
-	}
+	// comments, err := models.ReadAllComments()
+	// if err != nil {
+	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+	// 	return
+	// }
 
-	tmpl, err := template.ParseFiles(
-		publicUrl + "comments.html",
-	)
-	if err != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
-		return
-	}
+	// tmpl, err := template.ParseFiles(
+	// 	publicUrl + "comments.html",
+	// )
+	// if err != nil {
+	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+	// 	return
+	// }
 
-	err = tmpl.Execute(w, comments)
-	if err != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
-		return
-	}
+	// err = tmpl.Execute(w, comments)
+	// if err != nil {
+	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+	// 	return
+	// }
 }
 
 func readPostComments(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		errorManagement.HandleErrorPage(w, r, errorManagement.MethodNotAllowedError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
 		return
 	}
 
 	loginStatus, userId, checkLoginError := userManagementControllers.CheckLogin(r)
 	if checkLoginError != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 	if loginStatus {
@@ -71,36 +67,36 @@ func readPostComments(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("user is not logged in")
 	}
 
-	comments, err := models.ReadCommentsByPostId()
-	if err != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
-		return
-	}
+	// comments, err := models.ReadCommentsByPostId()
+	// if err != nil {
+	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+	// 	return
+	// }
 
-	tmpl, err := template.ParseFiles(
-		publicUrl + "post_comments.html",
-	)
-	if err != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
-		return
-	}
+	// tmpl, err := template.ParseFiles(
+	// 	publicUrl + "post_comments.html",
+	// )
+	// if err != nil {
+	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+	// 	return
+	// }
 
-	err = tmpl.Execute(w, comments)
-	if err != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
-		return
-	}
+	// err = tmpl.Execute(w, comments)
+	// if err != nil {
+	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+	// 	return
+	// }
 }
 
 func createComment(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		errorManagement.HandleErrorPage(w, r, errorManagement.MethodNotAllowedError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
 		return
 	}
 
 	loginStatus, userId, checkLoginError := userManagementControllers.CheckLogin(r)
 	if checkLoginError != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 	if loginStatus {
@@ -110,30 +106,30 @@ func createComment(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("user is not logged in")
 	}
 
-	tmpl, err := template.ParseFiles(
-		publicUrl + "new_comment.html",
-	)
-	if err != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
-		return
-	}
+	// tmpl, err := template.ParseFiles(
+	// 	publicUrl + "new_comment.html",
+	// )
+	// if err != nil {
+	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+	// 	return
+	// }
 
-	err = tmpl.Execute(w, nil)
-	if err != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
-		return
-	}
+	// err = tmpl.Execute(w, nil)
+	// if err != nil {
+	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+	// 	return
+	// }
 }
 
 func submitComment(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		errorManagement.HandleErrorPage(w, r, errorManagement.MethodNotAllowedError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
 		return
 	}
 
 	loginStatus, userId, checkLoginError := userManagementControllers.CheckLogin(r)
 	if checkLoginError != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 	if loginStatus {
@@ -145,32 +141,32 @@ func submitComment(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 	if err != nil {
-		errorManagement.HandleErrorPage(w, r, errorManagement.BadRequestError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
 	}
 	post_id := r.FormValue("post_id")
 	description := r.FormValue("description")
 	if len(post_id) == 0 || len(description) == 0 {
-		errorManagement.HandleErrorPage(w, r, errorManagement.BadRequestError)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
 	}
 
-	comment := &models.Comment{
-		PostId:      post_id,
-		Description: description,
-	}
+	// comment := &models.Comment{
+	// 	PostId:      post_id,
+	// 	Description: description,
+	// }
 
-	// Insert a record while checking duplicates
-	_, insertError := models.InsertComment(comment)
-	if insertError != nil {
-		if errors.Is(insertError, sql.ErrNoRows) {
-			// todo show toast
-			fmt.Println("Comment already exists!")
-		} else {
-			errorManagement.HandleErrorPage(w, r, errorManagement.InternalServerError)
-		}
-		return
-	} else {
-		fmt.Println("Comment added successfully!")
-	}
+	// // Insert a record while checking duplicates
+	// _, insertError := models.InsertComment(comment)
+	// if insertError != nil {
+	// 	if errors.Is(insertError, sql.ErrNoRows) {
+	// 		// todo show toast
+	// 		fmt.Println("Comment already exists!")
+	// 	} else {
+	// 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+	// 	}
+	// 	return
+	// } else {
+	// 	fmt.Println("Comment added successfully!")
+	// }
 }

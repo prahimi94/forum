@@ -14,9 +14,11 @@ func main() {
 
 	// Register route handlers
 	http.HandleFunc("/", forumManagementControllers.MainPageHandler)
-	http.HandleFunc("/auth", userManagementControllers.AuthHandler)
+	http.HandleFunc("/home/", forumManagementControllers.HomePageHandler)
+	http.HandleFunc("/auth/", userManagementControllers.AuthHandler)
 	http.HandleFunc("/register", userManagementControllers.RegisterHandler)
 	http.HandleFunc("/login", userManagementControllers.LoginHandler)
+	http.HandleFunc("/post/", forumManagementControllers.CreatePost)
 
 	// forumManagement.InsertPost("first post", "first post description", []int{1, 2}, 1)
 	// forumManagement.UpdatePost(1, "first post", "first post description updated", []int{2, 3}, 1)

@@ -1,4 +1,4 @@
-package errorManagement
+package controller
 
 import (
 	"html/template"
@@ -40,7 +40,7 @@ var PredefinedErrors = map[string]ErrorPageData{
 	},
 }
 
-var publicUrl = "frontend/errors/"
+var publicUrl = "errorManagement/views/"
 
 var (
 	BadRequestError       = PredefinedErrors["BadRequestError"]
