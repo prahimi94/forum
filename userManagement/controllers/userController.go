@@ -215,23 +215,27 @@ func RedirectToHome(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/home/", http.StatusFound)
 }
 
-// func Logout(w http.ResponseWriter, r *http.Request) {
-// 	loginStatus, userId, checkLoginError := CheckLogin(r)
-// 	if checkLoginError != nil {
-// 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-// 		return
-// 	}
-// 	if loginStatus {
-// 		fmt.Println("logged in userid is: ", userId)
-// 		RedirectToHome(w, r)
-// 		return
-// 	}
+func Logout(w http.ResponseWriter, r *http.Request) {
+	loginStatus, userId, checkLoginError := CheckLogin(r)
+	if checkLoginError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	if loginStatus {
+		fmt.Println("logged in userid is: ", userId)
+		RedirectToHome(w, r)
+		return
+	}
 
-// 	cookie, err := r.Cookie("session_token")
-// 	if err != nil {
-// 		return false, -1, nil
-// 	}
-
-// 	sessionToken := cookie.Value
-
-// }
+	cookie, err := r.Cookie("session_token")
+	if err != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	sessionToken := cookie.Value
+	err = models.DeleteSession(sessionToken)
+	if err != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+}
