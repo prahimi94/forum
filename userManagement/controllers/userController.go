@@ -238,4 +238,15 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
+	deleteCookie(w, "session_token") // Deleting a cookie named "session_token"
+}
+
+func deleteCookie(w http.ResponseWriter, cookieName string) {
+	http.SetCookie(w, &http.Cookie{
+		Name:    cookieName,
+		Value:   "",              // Optional but recommended
+		Expires: time.Unix(0, 0), // Set expiration to a past date
+		MaxAge:  -1,              // Ensure immediate removal
+		Path:    "/",             // Must match the original cookie path
+	})
 }
