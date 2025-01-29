@@ -2,14 +2,13 @@ package controller
 
 import (
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	errorManagementControllers "forum/errorManagement/controllers"
 	"forum/forumManagement/models"
 	"forum/utils"
-	"log"
 	"net/http"
+	"strconv"
 	"text/template"
 
 	userManagementControllers "forum/userManagement/controllers"
@@ -119,15 +118,30 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("user is not logged in")
 	}
 
+	categories, err := models.ReadAllCategories()
+	if err != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+
+	data_obj_sender := struct {
+		Categories []models.Category
+	}{
+		Categories: categories,
+	}
+
 	tmpl, err := template.ParseFiles(
-		publicUrl + "new_post.html",
+		publicUrl+"new_post.html",
+		publicUrl+"templates/header.html",
+		publicUrl+"templates/loggedInNavbar.html",
+		publicUrl+"templates/footer.html",
 	)
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 
-	err = tmpl.Execute(w, nil)
+	err = tmpl.Execute(w, data_obj_sender)
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
@@ -157,25 +171,31 @@ func SubmitPost(w http.ResponseWriter, r *http.Request) {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
 	}
+
 	title := r.FormValue("title")
 	description := r.FormValue("description")
-	categories := r.FormValue("categories")
+	categories := r.Form["categories"]
 	if len(title) == 0 || len(description) == 0 || len(categories) == 0 {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
 	}
 
-	// Declare a slice to store the result
-	var categoryIds []int
-	// Unmarshal the string into the slice
-	err = json.Unmarshal([]byte(categories), &categoryIds)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	post := &models.Post{
 		Title:       title,
 		Description: description,
+		UserId:      userId,
+	}
+
+	// Convert the string slice to an int slice
+	categoryIds := make([]int, 0, len(categories))
+	for _, category := range categories {
+		if id, err := strconv.Atoi(category); err == nil {
+			categoryIds = append(categoryIds, id)
+		} else {
+			// Handle error if conversion fails (for example, invalid input)
+			http.Error(w, "Invalid category ID", http.StatusBadRequest)
+			return
+		}
 	}
 
 	// Insert a record while checking duplicates

@@ -8,6 +8,7 @@ import (
 	"text/template"
 
 	userManagementControllers "forum/userManagement/controllers"
+	userManagementModels "forum/userManagement/models"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -52,15 +53,21 @@ func MainPageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data_obj_sender := struct {
+		User       userManagementModels.User
 		Posts      []models.Post
 		Categories []models.Category
 	}{
+		User:       userManagementModels.User{ID: userId},
 		Posts:      posts,
 		Categories: categories,
 	}
 
 	tmpl, err := template.ParseFiles(
-		publicUrl + "index.html",
+		publicUrl+"index.html",
+		publicUrl+"templates/header.html",
+		publicUrl+"templates/navbar.html",
+		publicUrl+"templates/hero.html",
+		publicUrl+"templates/footer.html",
 	)
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
@@ -120,7 +127,10 @@ func HomePageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tmpl, err := template.ParseFiles(
-		publicUrl + "home.html",
+		publicUrl+"home.html",
+		publicUrl+"templates/header.html",
+		publicUrl+"templates/loggedInNavbar.html",
+		publicUrl+"templates/footer.html",
 	)
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
