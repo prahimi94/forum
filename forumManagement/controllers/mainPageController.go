@@ -27,7 +27,7 @@ func MainPageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, userId, checkLoginError := userManagementControllers.CheckLogin(r)
+	loginStatus, userId, _, checkLoginError := userManagementControllers.CheckLogin(r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
@@ -93,7 +93,7 @@ func HomePageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, userId, checkLoginError := userManagementControllers.CheckLogin(r)
+	loginStatus, userId, _, checkLoginError := userManagementControllers.CheckLogin(r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return

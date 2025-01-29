@@ -22,7 +22,7 @@ func ReadAllPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, userId, checkLoginError := userManagementControllers.CheckLogin(r)
+	loginStatus, userId, _, checkLoginError := userManagementControllers.CheckLogin(r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
@@ -61,7 +61,7 @@ func ReadPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, userId, checkLoginError := userManagementControllers.CheckLogin(r)
+	loginStatus, userId, _, checkLoginError := userManagementControllers.CheckLogin(r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
@@ -106,7 +106,7 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, userId, checkLoginError := userManagementControllers.CheckLogin(r)
+	loginStatus, userId, _, checkLoginError := userManagementControllers.CheckLogin(r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
@@ -154,7 +154,7 @@ func SubmitPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, userId, checkLoginError := userManagementControllers.CheckLogin(r)
+	loginStatus, userId, _, checkLoginError := userManagementControllers.CheckLogin(r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
