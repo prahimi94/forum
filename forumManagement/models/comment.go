@@ -537,6 +537,14 @@ func ReadAllCommentsOfUserForPost(postId int, userId int) ([]Comment, error) {
 			&post.UpdatedAt,
 			&post.UpdatedBy,
 
+			&comment.ID,
+			&comment.UserId,
+			&comment.Description,
+			&comment.Status,
+			&comment.CreatedAt,
+			&comment.UpdatedAt,
+			&comment.UpdatedBy,
+
 			&user.ID,
 			&user.UUID,
 			&user.Username,
@@ -547,15 +555,6 @@ func ReadAllCommentsOfUserForPost(postId int, userId int) ([]Comment, error) {
 			&user.CreatedAt,
 			&user.UpdatedAt,
 			&user.UpdatedBy,
-
-			&comment.ID,
-			&comment.PostId,
-			&comment.Description,
-			&comment.UserId,
-			&comment.Status,
-			&comment.CreatedAt,
-			&comment.UpdatedAt,
-			&comment.UpdatedBy,
 		)
 
 		if err != nil {

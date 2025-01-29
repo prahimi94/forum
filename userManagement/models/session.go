@@ -64,10 +64,11 @@ func SelectSession(sessionToken string) (int, time.Time, error) {
 }
 
 func DeleteSession(sessionToken string) error {
+
 	db := utils.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
-	err := db.QueryRow(`UPDATE sessions
-					SET expiers_at = CURRENT_TIMESTAMP,
+	_, err := db.Exec(`UPDATE sessions
+					SET expires_at = CURRENT_TIMESTAMP
 					WHERE session_token = ?;`, sessionToken)
 	if err != nil {
 		// Handle other database errors

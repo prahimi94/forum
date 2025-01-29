@@ -210,22 +210,25 @@ func RedirectToHome(w http.ResponseWriter, r *http.Request) {
 }
 
 func Logout(w http.ResponseWriter, r *http.Request) {
-	loginStatus, userId, sessionToken, checkLoginError := CheckLogin(r)
+	loginStatus, _, sessionToken, checkLoginError := CheckLogin(r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
-	if loginStatus {
-		fmt.Println("logged in userid is: ", userId)
-		RedirectToHome(w, r)
+
+	if !loginStatus {
+		RedirectToIndex(w, r)
 		return
 	}
+
 	err := models.DeleteSession(sessionToken)
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
+
 	deleteCookie(w, "session_token") // Deleting a cookie named "session_token"
+	RedirectToIndex(w, r)
 }
 
 func deleteCookie(w http.ResponseWriter, cookieName string) {
@@ -244,6 +247,6 @@ func SetCookie(w http.ResponseWriter, sessionToken string, expiresAt time.Time) 
 		Value:    sessionToken,
 		Expires:  expiresAt,
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   false,
 	})
 }

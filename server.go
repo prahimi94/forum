@@ -16,6 +16,7 @@ func main() {
 	http.HandleFunc("/", forumManagementControllers.MainPageHandler)
 	http.HandleFunc("/home/", forumManagementControllers.HomePageHandler)
 	http.HandleFunc("/auth/", userManagementControllers.AuthHandler)
+	http.HandleFunc("/logout/", userManagementControllers.Logout)
 	http.HandleFunc("/register", userManagementControllers.RegisterHandler) /*post method*/
 	http.HandleFunc("/login", userManagementControllers.LoginHandler)       /*post method*/
 	http.HandleFunc("/newPost/", forumManagementControllers.CreatePost)

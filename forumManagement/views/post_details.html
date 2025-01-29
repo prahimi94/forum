@@ -18,6 +18,74 @@
                 <h1>{{.Post.Title}}</h1>
             </div>
         </div>
+        <div class="row">
+            <div class="col-md-12">
+                <p>{{.Post.CreatedAt}}</p>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="categories mb-3">
+                    {{range .Post.Categories}}
+                    <h5><span class="badge text-bg-warning">{{.Name}}</span></h5>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-3">
+                <p>Post</p>
+            </div>
+            <div class="col-md-9">
+                <p>{{.Post.Description}}</p>
+            </div>
+        </div>
+        <div class="row">
+            <hr>
+        </div>
+        <div class="row">
+            <div class="col-md-3">
+                <p>Related Image</p>
+            </div>
+            <div class="col-md-9">
+                <p>{{.Post.Description}}</p>
+            </div>
+        </div>
+        <div class="row">
+            <hr>
+        </div>
+        <div class="row">
+            <div class="col-md-3">
+                <p>Author</p>
+            </div>
+            <div class="col-md-9">
+                <p>{{.Post.User.Username}}</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-2">
+                <a class="btn btn-success"><i class="fas fa-edit me-2"></i>Edit Post</a>
+            </div>
+            <div class="col-md-2">
+                <a class="btn btn-light"><i class="fas fa-edit me-2"></i>Delete Post</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                {{range .Comments}}
+                    <div class="post-card">
+                        <h5 class="mt-2">{{.User.Username}}</h5>
+                        <p>{{.CreatedAt}}</p>
+                        <small>{{.Description}}</small>
+                    </div>
+                {{end}}
+            </div>
+        </div>
     </div>
     </div>
 

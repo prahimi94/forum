@@ -112,6 +112,8 @@ func ReadPost(w http.ResponseWriter, r *http.Request) {
 		data_obj_sender.Comments = comments
 	}
 
+	fmt.Println(data_obj_sender)
+
 	tmpl, err := template.ParseFiles(
 		publicUrl+"post_details.html",
 		publicUrl+"templates/header.html",

@@ -12,17 +12,17 @@ import (
 
 // User struct represents the user data model
 type User struct {
-	ID        int       `json:"id"`
-	UUID      string    `json:"uuid"`
-	Type      string    `json:"type"`
-	Name      string    `json:"name"`
-	Username  string    `json:"username"`
-	Email     string    `json:"email"`
-	Password  string    `json:"password"`
-	Status    string    `json:"status"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	UpdatedBy int       `json:"updated_by"`
+	ID        int        `json:"id"`
+	UUID      string     `json:"uuid"`
+	Type      string     `json:"type"`
+	Name      string     `json:"name"`
+	Username  string     `json:"username"`
+	Email     string     `json:"email"`
+	Password  string     `json:"password"`
+	Status    string     `json:"status"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt *time.Time `json:"updated_at"`
+	UpdatedBy *int       `json:"updated_by"`
 }
 
 func InsertUser(user *User) (int, error) {

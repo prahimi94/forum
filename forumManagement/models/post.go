@@ -179,7 +179,8 @@ func ReadAllPosts() ([]Post, error) {
 				ON pc.category_id = c.id
 				AND c.status = 'enable'
 		WHERE p.status != 'delete'
-			AND u.status != 'delete';
+			AND u.status != 'delete'
+		ORDER BY p.created_at desc;
     `)
 	if selectError != nil {
 		return nil, selectError
@@ -418,11 +419,6 @@ func ReadPostByUUID(postUUID string) (Post, error) {
 			return Post{}, fmt.Errorf("error scanning row: %v", err)
 		}
 
-		// Assign user to post
-		if post.UserId == 0 { // If this is the first time we're encountering the post
-			post.User = user
-		}
-
 		// Append category to post categories list
 		categories = append(categories, category)
 	}
@@ -434,6 +430,7 @@ func ReadPostByUUID(postUUID string) (Post, error) {
 
 	// Assign categories to the post
 	post.Categories = categories
+	post.User = user
 
 	// Check for any errors during row iteration
 	if err := rows.Err(); err != nil {
