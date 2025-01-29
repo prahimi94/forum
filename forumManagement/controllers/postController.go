@@ -85,15 +85,45 @@ func ReadPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	data_obj_sender := struct {
+		Post     models.Post
+		Comments []models.Comment
+	}{
+		Post:     post,
+		Comments: nil,
+	}
+
+	if loginStatus {
+		comments, err := models.ReadAllCommentsOfUserForPost(post.ID, userId)
+		if err != nil {
+			fmt.Println(err)
+			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+			return
+		}
+
+		data_obj_sender.Comments = comments
+	} else {
+		comments, err := models.ReadAllCommentsForPost(post.ID)
+		if err != nil {
+			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+			return
+		}
+
+		data_obj_sender.Comments = comments
+	}
+
 	tmpl, err := template.ParseFiles(
-		publicUrl + "post_details.html",
+		publicUrl+"post_details.html",
+		publicUrl+"templates/header.html",
+		publicUrl+"templates/loggedInNavbar.html",
+		publicUrl+"templates/footer.html",
 	)
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 
-	err = tmpl.Execute(w, post)
+	err = tmpl.Execute(w, data_obj_sender)
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return

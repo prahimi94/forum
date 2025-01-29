@@ -14,7 +14,6 @@ func GenerateUuid() (string, error) {
 		log.Fatalf("failed to generate UUID: %v", err)
 		return "", err
 	}
-	log.Printf("generated Version 4 UUID %v", u2)
 
 	return u2.String(), nil
 }

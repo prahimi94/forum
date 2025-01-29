@@ -67,6 +67,7 @@ func MainPageHandler(w http.ResponseWriter, r *http.Request) {
 		publicUrl+"templates/header.html",
 		publicUrl+"templates/navbar.html",
 		publicUrl+"templates/hero.html",
+		publicUrl+"templates/posts.html",
 		publicUrl+"templates/footer.html",
 	)
 	if err != nil {
@@ -130,6 +131,7 @@ func HomePageHandler(w http.ResponseWriter, r *http.Request) {
 		publicUrl+"home.html",
 		publicUrl+"templates/header.html",
 		publicUrl+"templates/loggedInNavbar.html",
+		publicUrl+"templates/posts.html",
 		publicUrl+"templates/footer.html",
 	)
 	if err != nil {

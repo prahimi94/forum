@@ -97,7 +97,7 @@ func ReadAllComments() ([]Comment, error) {
 			c.id AS comment_id, c.user_id AS comment_user_id, c.description AS comment_description, 
 			c.status AS comment_status, c.created_at AS comment_created_at, c.updated_at AS comment_updated_at, c.updated_by AS comment_updated_by,
 			u.id AS user_id, u.uuid AS user_uuid, u.username AS user_username, u.name AS user_name, u.type AS user_type, u.email AS user_email,  
-			u.status AS user_status, u.created_at AS user_created_at, u.updated_at AS user_updated_at, u.updated_by AS user_updated_by,
+			u.status AS user_status, u.created_at AS user_created_at, u.updated_at AS user_updated_at, u.updated_by AS user_updated_by
 		FROM comments c
 		INNER JOIN posts p ON c.post_id = p.id AND p.status != 'delete' AND c.status != 'delete'
 		INNER JOIN users u ON c.user_id = u.id AND u.status != 'delete'
@@ -508,7 +508,7 @@ func ReadAllCommentsOfUserForPost(postId int, userId int) ([]Comment, error) {
 			c.id AS comment_id, c.user_id AS comment_user_id, c.description AS comment_description, 
 			c.status AS comment_status, c.created_at AS comment_created_at, c.updated_at AS comment_updated_at, c.updated_by AS comment_updated_by,
 			u.id AS user_id, u.uuid AS user_uuid, u.username AS user_username, u.name AS user_name, u.type AS user_type, u.email AS user_email,  
-			u.status AS user_status, u.created_at AS user_created_at, u.updated_at AS user_updated_at, u.updated_by AS user_updated_by,
+			u.status AS user_status, u.created_at AS user_created_at, u.updated_at AS user_updated_at, u.updated_by AS user_updated_by
 		FROM comments c
 		INNER JOIN posts p ON c.post_id = p.id AND p.status != 'delete' AND c.status != 'delete' AND p.id = ?
 		INNER JOIN users u ON c.user_id = u.id AND u.status != 'delete'

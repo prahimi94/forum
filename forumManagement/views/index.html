@@ -16,16 +16,7 @@
             {{end}}
         </div>
         
-        {{range .Posts}}
-            <div class="post-card">
-                {{range .Categories}} 
-                    <span class="badge bg-warning text-dark">{{.Name}}</span>
-                {{end}}
-                <h5 class="mt-2">{{.Title}}</h5>
-                <p>{{.Description}}</p>
-                <small>Author: {{.User.Username}} | Created: {{.CreatedAt}}</small>
-            </div>
-        {{end}}
+        {{template "posts" .Posts}}
     </div>
     
     
