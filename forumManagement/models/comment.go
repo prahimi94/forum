@@ -231,7 +231,95 @@ func ReadCommentsFromUserId(userId int) ([]Comment, error) {
 	return comments, nil
 }
 
-func ReadAllCommentsForPost(postId int, userID int) ([]Comment, error) {
+func ReadAllCommentsForPost(postId int) ([]Comment, error) {
+	db := utils.OpenDBConnection()
+	defer db.Close() // Close the connection after the function finishes
+
+	var comments []Comment
+	commentMap := make(map[int]*Comment)
+	// Updated query to join comments with posts
+	selectQuery := `
+		SELECT 
+			u.id AS user_id, u.uuid AS user_uuid, u.username AS user_username, u.name AS user_name, u.type AS user_type, u.email AS user_email,  
+			u.status AS user_status, u.created_at AS user_created_at, u.updated_at AS user_updated_at, u.updated_by AS user_updated_by,
+			c.id AS comment_id, c.user_id AS comment_user_id, c.description AS comment_description, 
+			c.status AS comment_status, c.created_at AS comment_created_at, c.updated_at AS comment_updated_at, c.updated_by AS comment_updated_by,
+			cl.type
+		FROM comments c
+			INNER JOIN users u
+				ON c.user_id = u.id AND c.status != 'delete' AND u.status != 'delete' AND c.post_id = ?
+			INNER JOIN comment_likes cl
+				ON c.id = cl.comment_id AND cl.status != 'delete';
+	`
+	rows, selectError := db.Query(selectQuery, postId) // Query the database
+	if selectError != nil {
+		return nil, selectError
+	}
+	defer rows.Close() // Ensure rows are closed after processing
+
+	// Iterate over rows and populate the slice
+	for rows.Next() {
+		var comment Comment
+		var user userManagementModels.User
+		var Type string
+		err := rows.Scan(
+			// Map post fields
+			&user.ID,
+			&user.UUID,
+			&user.Username,
+			&user.Name,
+			&user.Type,
+			&user.Email,
+			&user.Status,
+			&user.CreatedAt,
+			&user.UpdatedAt,
+			&user.UpdatedBy,
+
+			// Map comment fields
+			&comment.ID,
+			&comment.UserId,
+			&comment.Description,
+			&comment.Status,
+			&comment.CreatedAt,
+			&comment.UpdatedAt,
+			&comment.UpdatedBy,
+
+			&Type,
+		)
+		if existingComment, found := commentMap[comment.ID]; found {
+			if Type == "like" {
+				existingComment.NumberOfLikes++
+			} else if Type == "dislike" {
+				existingComment.NumberOfDislikes++
+			}
+		} else {
+			if Type == "like" {
+				comment.NumberOfLikes++
+			} else if Type == "dislike" {
+				comment.NumberOfDislikes++
+			}
+
+			commentMap[comment.ID] = &comment
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Check for any errors during the iteration
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	// Convert the map of comments into a slice
+	for _, comment := range commentMap {
+		comments = append(comments, *comment)
+	}
+
+	return comments, nil
+}
+
+func ReadAllCommentsForPostByUserID(postId int, userID int) ([]Comment, error) {
 	db := utils.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
