@@ -16,7 +16,7 @@ func ReadAllComments(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, userId, checkLoginError := userManagementControllers.CheckLogin(r)
+	loginStatus, userId, _, checkLoginError := userManagementControllers.CheckLogin(r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
@@ -55,7 +55,7 @@ func readPostComments(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, userId, checkLoginError := userManagementControllers.CheckLogin(r)
+	loginStatus, userId, _, checkLoginError := userManagementControllers.CheckLogin(r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
@@ -94,7 +94,7 @@ func createComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, userId, checkLoginError := userManagementControllers.CheckLogin(r)
+	loginStatus, userId, _, checkLoginError := userManagementControllers.CheckLogin(r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
@@ -127,7 +127,7 @@ func submitComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, userId, checkLoginError := userManagementControllers.CheckLogin(r)
+	loginStatus, userId, _, checkLoginError := userManagementControllers.CheckLogin(r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return

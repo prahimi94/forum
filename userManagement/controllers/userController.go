@@ -25,7 +25,7 @@ func AuthHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, userId, checkLoginError := CheckLogin(r)
+	loginStatus, userId, _, checkLoginError := CheckLogin(r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
@@ -56,7 +56,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, userId, checkLoginError := CheckLogin(r)
+	loginStatus, userId, _, checkLoginError := CheckLogin(r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
@@ -115,7 +115,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, userId, checkLoginError := CheckLogin(r)
+	loginStatus, userId, _, checkLoginError := CheckLogin(r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
@@ -174,37 +174,31 @@ func sessionGenerator(w http.ResponseWriter, r *http.Request, userId int) {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
-
+	SetCookie(w, session.SessionToken, session.ExpiresAt)
 	// Set the session token in a cookie
-	http.SetCookie(w, &http.Cookie{
-		Name:     "session_token",
-		Value:    session.SessionToken,
-		Expires:  session.ExpiresAt,
-		HttpOnly: true,
-		Secure:   true,
-	})
+
 }
 
 // Middleware to check for valid user session in cookie
-func CheckLogin(r *http.Request) (bool, int, error) {
+func CheckLogin(r *http.Request) (bool, int, string, error) {
 	cookie, err := r.Cookie("session_token")
 	if err != nil {
-		return false, -1, nil
+		return false, -1, "", nil
 	}
 
 	sessionToken := cookie.Value
 	userId, expirationTime, selectError := models.SelectSession(sessionToken)
 	if selectError != nil {
-		return false, -1, selectError
+		return false, -1, "", selectError
 	}
 
 	// Check if the cookie has expired
 	if time.Now().After(expirationTime) {
 		// Cookie expired, redirect to login
-		return false, -1, nil
+		return false, -1, "", nil
 	}
 
-	return true, userId, nil
+	return true, userId, sessionToken, nil
 }
 
 func RedirectToIndex(w http.ResponseWriter, r *http.Request) {
@@ -215,23 +209,41 @@ func RedirectToHome(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/home/", http.StatusFound)
 }
 
-// func Logout(w http.ResponseWriter, r *http.Request) {
-// 	loginStatus, userId, checkLoginError := CheckLogin(r)
-// 	if checkLoginError != nil {
-// 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-// 		return
-// 	}
-// 	if loginStatus {
-// 		fmt.Println("logged in userid is: ", userId)
-// 		RedirectToHome(w, r)
-// 		return
-// 	}
+func Logout(w http.ResponseWriter, r *http.Request) {
+	loginStatus, userId, sessionToken, checkLoginError := CheckLogin(r)
+	if checkLoginError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	if loginStatus {
+		fmt.Println("logged in userid is: ", userId)
+		RedirectToHome(w, r)
+		return
+	}
+	err := models.DeleteSession(sessionToken)
+	if err != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	deleteCookie(w, "session_token") // Deleting a cookie named "session_token"
+}
 
-// 	cookie, err := r.Cookie("session_token")
-// 	if err != nil {
-// 		return false, -1, nil
-// 	}
+func deleteCookie(w http.ResponseWriter, cookieName string) {
+	http.SetCookie(w, &http.Cookie{
+		Name:    cookieName,
+		Value:   "",              // Optional but recommended
+		Expires: time.Unix(0, 0), // Set expiration to a past date
+		MaxAge:  -1,              // Ensure immediate removal
+		Path:    "/",             // Must match the original cookie path
+	})
+}
 
-// 	sessionToken := cookie.Value
-
-// }
+func SetCookie(w http.ResponseWriter, sessionToken string, expiresAt time.Time) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_token",
+		Value:    sessionToken,
+		Expires:  expiresAt,
+		HttpOnly: true,
+		Secure:   true,
+	})
+}
