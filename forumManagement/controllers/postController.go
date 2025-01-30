@@ -12,6 +12,7 @@ import (
 	"text/template"
 
 	userManagementControllers "forum/userManagement/controllers"
+	userManagementModels "forum/userManagement/models"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -22,13 +23,13 @@ func ReadAllPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, userId, _, checkLoginError := userManagementControllers.CheckLogin(r)
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 	if loginStatus {
-		fmt.Println("logged in userid is: ", userId)
+		fmt.Println("logged in userid is: ", loginUser.ID)
 		// return
 	} else {
 		fmt.Println("user is not logged in")
@@ -61,13 +62,13 @@ func ReadPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, userId, _, checkLoginError := userManagementControllers.CheckLogin(r)
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 	if loginStatus {
-		fmt.Println("logged in userid is: ", userId)
+		fmt.Println("logged in userid is: ", loginUser.ID)
 		// return
 	} else {
 		fmt.Println("user is not logged in")
@@ -86,15 +87,17 @@ func ReadPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data_obj_sender := struct {
-		Post     models.Post
-		Comments []models.Comment
+		LoginUser userManagementModels.User
+		Post      models.Post
+		Comments  []models.Comment
 	}{
-		Post:     post,
-		Comments: nil,
+		LoginUser: loginUser,
+		Post:      post,
+		Comments:  nil,
 	}
 
 	if loginStatus {
-		comments, err := models.ReadAllCommentsOfUserForPost(post.ID, userId)
+		comments, err := models.ReadAllCommentsOfUserForPost(post.ID, loginUser.ID)
 		if err != nil {
 			fmt.Println(err)
 			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
@@ -111,8 +114,6 @@ func ReadPost(w http.ResponseWriter, r *http.Request) {
 
 		data_obj_sender.Comments = comments
 	}
-
-	fmt.Println(data_obj_sender)
 
 	tmpl, err := template.ParseFiles(
 		publicUrl+"post_details.html",
@@ -138,13 +139,13 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, userId, _, checkLoginError := userManagementControllers.CheckLogin(r)
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 	if loginStatus {
-		fmt.Println("logged in userid is: ", userId)
+		fmt.Println("logged in userid is: ", loginUser.ID)
 		// return
 	} else {
 		fmt.Println("user is not logged in")
@@ -157,8 +158,10 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data_obj_sender := struct {
+		LoginUser  userManagementModels.User
 		Categories []models.Category
 	}{
+		LoginUser:  loginUser,
 		Categories: categories,
 	}
 
@@ -186,13 +189,13 @@ func SubmitPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, userId, _, checkLoginError := userManagementControllers.CheckLogin(r)
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 	if loginStatus {
-		fmt.Println("logged in userid is: ", userId)
+		fmt.Println("logged in userid is: ", loginUser.ID)
 		// return
 	} else {
 		fmt.Println("user is not logged in")
@@ -215,7 +218,7 @@ func SubmitPost(w http.ResponseWriter, r *http.Request) {
 	post := &models.Post{
 		Title:       title,
 		Description: description,
-		UserId:      userId,
+		UserId:      loginUser.ID,
 	}
 
 	// Convert the string slice to an int slice

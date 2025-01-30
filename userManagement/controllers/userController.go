@@ -25,13 +25,13 @@ func AuthHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, userId, _, checkLoginError := CheckLogin(r)
+	loginStatus, user, _, checkLoginError := CheckLogin(r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 	if loginStatus {
-		fmt.Println("logged in userid is: ", userId)
+		fmt.Println("logged in userid is: ", user.ID)
 		RedirectToHome(w, r)
 		return
 	}
@@ -56,13 +56,13 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, userId, _, checkLoginError := CheckLogin(r)
+	loginStatus, user, _, checkLoginError := CheckLogin(r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 	if loginStatus {
-		fmt.Println("logged in userid is: ", userId)
+		fmt.Println("logged in userid is: ", user.ID)
 		RedirectToHome(w, r)
 		return
 	}
@@ -84,14 +84,14 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := &models.User{
+	newUser := &models.User{
 		Username: username,
 		Email:    email,
 		Password: string(hashedPassword),
 	}
 
 	// Insert a record while checking duplicates
-	userId, insertError := models.InsertUser(user)
+	userId, insertError := models.InsertUser(newUser)
 	if insertError != nil {
 		if errors.Is(insertError, sql.ErrNoRows) {
 			// todo show toast
@@ -115,13 +115,13 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, userId, _, checkLoginError := CheckLogin(r)
+	loginStatus, user, _, checkLoginError := CheckLogin(r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 	if loginStatus {
-		fmt.Println("logged in userid is: ", userId)
+		fmt.Println("logged in userid is: ", user.ID)
 		RedirectToHome(w, r)
 		return
 	}
@@ -180,25 +180,25 @@ func sessionGenerator(w http.ResponseWriter, r *http.Request, userId int) {
 }
 
 // Middleware to check for valid user session in cookie
-func CheckLogin(r *http.Request) (bool, int, string, error) {
+func CheckLogin(r *http.Request) (bool, models.User, string, error) {
 	cookie, err := r.Cookie("session_token")
 	if err != nil {
-		return false, -1, "", nil
+		return false, models.User{}, "", nil
 	}
 
 	sessionToken := cookie.Value
-	userId, expirationTime, selectError := models.SelectSession(sessionToken)
+	user, expirationTime, selectError := models.SelectSession(sessionToken)
 	if selectError != nil {
-		return false, -1, "", selectError
+		return false, models.User{}, "", selectError
 	}
 
 	// Check if the cookie has expired
 	if time.Now().After(expirationTime) {
 		// Cookie expired, redirect to login
-		return false, -1, "", nil
+		return false, models.User{}, "", nil
 	}
 
-	return true, userId, sessionToken, nil
+	return true, user, sessionToken, nil
 }
 
 func RedirectToIndex(w http.ResponseWriter, r *http.Request) {

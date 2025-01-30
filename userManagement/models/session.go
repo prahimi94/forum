@@ -47,20 +47,26 @@ func InsertSession(session *Session) (*Session, error) {
 	return session, nil
 }
 
-func SelectSession(sessionToken string) (int, time.Time, error) {
+func SelectSession(sessionToken string) (User, time.Time, error) {
 	db := utils.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
-	var userId int
+	var user User
 	var expirationTime time.Time
-	err := db.QueryRow("SELECT user_id, expires_at FROM sessions WHERE session_token = ?", sessionToken).Scan(&userId, &expirationTime)
+	err := db.QueryRow(`SELECT 
+							u.id as user_id, u.type as user_type, u.name as user_name, u.username as username, u.email as user_email, 
+							expires_at 
+						FROM sessions s
+							INNER JOIN users u
+								ON s.user_id = u.id
+						WHERE session_token = ?`, sessionToken).Scan(&user.ID, &user.Type, &user.Name, &user.Username, &user.Email, &expirationTime)
 	if err != nil {
 		// Handle other database errors
 		log.Fatal(err)
-		return -1, time.Time{}, errors.New("database error")
+		return User{}, time.Time{}, errors.New("database error")
 	}
 
-	return userId, expirationTime, nil
+	return user, expirationTime, nil
 }
 
 func DeleteSession(sessionToken string) error {

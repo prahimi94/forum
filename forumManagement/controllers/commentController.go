@@ -16,13 +16,13 @@ func ReadAllComments(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, userId, _, checkLoginError := userManagementControllers.CheckLogin(r)
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 	if loginStatus {
-		fmt.Println("logged in userid is: ", userId)
+		fmt.Println("logged in userid is: ", loginUser.ID)
 		// return
 	} else {
 		fmt.Println("user is not logged in")
@@ -55,13 +55,13 @@ func readPostComments(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, userId, _, checkLoginError := userManagementControllers.CheckLogin(r)
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 	if loginStatus {
-		fmt.Println("logged in userid is: ", userId)
+		fmt.Println("logged in userid is: ", loginUser.ID)
 		// return
 	} else {
 		fmt.Println("user is not logged in")
@@ -94,13 +94,13 @@ func createComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, userId, _, checkLoginError := userManagementControllers.CheckLogin(r)
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 	if loginStatus {
-		fmt.Println("logged in userid is: ", userId)
+		fmt.Println("logged in userid is: ", loginUser.ID)
 		// return
 	} else {
 		fmt.Println("user is not logged in")
@@ -127,13 +127,13 @@ func submitComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, userId, _, checkLoginError := userManagementControllers.CheckLogin(r)
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 	if loginStatus {
-		fmt.Println("logged in userid is: ", userId)
+		fmt.Println("logged in userid is: ", loginUser.ID)
 		// return
 	} else {
 		fmt.Println("user is not logged in")

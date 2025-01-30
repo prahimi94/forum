@@ -1,6 +1,6 @@
 {{template "header"}}
 <body>
-    {{template "loggedInNavbar"}}
+    {{template "loggedInNavbar" .LoginUser}}
     
     <div class="container">
         <div class="row">
@@ -27,9 +27,11 @@
         <div class="row">
             <div class="col-md-12">
                 <div class="categories mb-3">
-                    {{range .Post.Categories}}
-                    <h5><span class="badge text-bg-warning">{{.Name}}</span></h5>
-                    {{end}}
+                    <h5>
+                        {{range .Post.Categories}}
+                            <span class="badge text-bg-warning">{{.Name}}</span>
+                        {{end}}
+                    </h5>
                 </div>
             </div>
         </div>
@@ -64,6 +66,8 @@
                 <p>{{.Post.User.Username}}</p>
             </div>
         </div>
+
+        {{if eq .LoginUser.ID .Post.UserId}}
         <div class="row">
             <div class="col-md-2">
                 <a class="btn btn-success"><i class="fas fa-edit me-2"></i>Edit Post</a>
@@ -72,6 +76,8 @@
                 <a class="btn btn-light"><i class="fas fa-edit me-2"></i>Delete Post</a>
             </div>
         </div>
+        {{end}}
+        
     </div>
 
     <div class="container">

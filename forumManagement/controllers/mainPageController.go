@@ -27,13 +27,13 @@ func MainPageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, userId, _, checkLoginError := userManagementControllers.CheckLogin(r)
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 	if loginStatus {
-		fmt.Println("logged in userid is: ", userId)
+		fmt.Println("logged in userid is: ", loginUser.ID)
 		userManagementControllers.RedirectToHome(w, r)
 		return
 	} else {
@@ -53,11 +53,11 @@ func MainPageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data_obj_sender := struct {
-		User       userManagementModels.User
+		LoginUser  userManagementModels.User
 		Posts      []models.Post
 		Categories []models.Category
 	}{
-		User:       userManagementModels.User{ID: userId},
+		LoginUser:  loginUser,
 		Posts:      posts,
 		Categories: categories,
 	}
@@ -94,13 +94,13 @@ func HomePageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, userId, _, checkLoginError := userManagementControllers.CheckLogin(r)
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 	if loginStatus {
-		fmt.Println("logged in userid is: ", userId)
+		fmt.Println("logged in userid is: ", loginUser.ID)
 	} else {
 		fmt.Println("user is not logged in")
 		userManagementControllers.RedirectToIndex(w, r)
@@ -120,9 +120,11 @@ func HomePageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data_obj_sender := struct {
+		LoginUser  userManagementModels.User
 		Posts      []models.Post
 		Categories []models.Category
 	}{
+		LoginUser:  loginUser,
 		Posts:      posts,
 		Categories: categories,
 	}
