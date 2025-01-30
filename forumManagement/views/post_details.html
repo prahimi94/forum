@@ -2,8 +2,8 @@
 <body>
     {{template "navbar" .LoginUser}}
     
-    <div class="container">
-        <div class="row">
+    <div class="container px-5 py-1">
+        <div class="row pb-5">
             <div class="col-md-12">
                 <ul class="breadcrumb">
                     <li>
@@ -20,7 +20,7 @@
         </div>
         <div class="row">
             <div class="col-md-12">
-                <p>{{.Post.CreatedAt}}</p>
+                <p>{{.Post.CreatedAt | formatDate }}</p>
             </div>
         </div>
 
@@ -80,22 +80,43 @@
         
     </div>
 
-    <div class="container">
+    <!-- New comment section -->
+    <div class="container p-5">
+        <div class="row">
+            <div class="col-md-12">
+                <h3>Comments</h3>
+                <p class="text-secondary">You can share your ideas about this post here.</p>
+                <form method="post" action="/submitComment">
+                    <div class="mb-3">
+                        <input type="hidden" id="post_id" name="post_id" value="{{.Post.ID}}">
+                    </div>
+
+                    <div class="mb-3">
+                        <textarea class="form-control" placeholder="Text" rows="4" name="description"></textarea>
+                    </div>
+                    <button class="btn btn-success" type="submit" class="btn btn-success w-100">Comment</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comments section -->
+    <div class="container p-5">
         <div class="row">
             <div class="col-md-12">
                 {{range .Comments}}
                     <div class="post-card">
                         <h5 class="mt-2">{{.User.Username}}</h5>
-                        <p>{{.CreatedAt}}</p>
+                        <p>{{.CreatedAt | formatDate }}</p>
                         <small>{{.Description}}</small>
                     </div>
                 {{end}}
             </div>
         </div>
     </div>
+
+
     </div>
 
-    
-    {{template "footer"}}
 </body>
 </html>

@@ -28,22 +28,15 @@ func InsertComment(postId int, userId int, description string) (int, error) {
 	db := utils.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
-	// Start a transaction for atomicity
-	tx, err := db.Begin()
-	if err != nil {
-		return -1, err
-	}
 	insertQuery := `INSERT INTO comments (post_id, description, user_id) VALUES (?, ?, ?);`
-	result, insertErr := tx.Exec(insertQuery, postId, description, userId)
+	result, insertErr := db.Exec(insertQuery, postId, description, userId)
 	if insertErr != nil {
-		tx.Rollback() // Rollback on error
 		// Check if the error is a SQLite constraint violation
 		return -1, insertErr
 	}
 	// Retrieve the last inserted ID
 	lastInsertID, errFind := result.LastInsertId()
 	if errFind != nil {
-		tx.Rollback() // Rollback on error
 		log.Fatal(errFind)
 		return -1, errFind
 	}
@@ -101,6 +94,7 @@ func ReadAllComments() ([]Comment, error) {
 		FROM comments c
 		INNER JOIN posts p ON c.post_id = p.id AND p.status != 'delete' AND c.status != 'delete'
 		INNER JOIN users u ON c.user_id = u.id AND u.status != 'delete'
+		ORDER BY c.id desc
 	`
 	// Query the records
 	rows, selectError := db.Query(selectQuery)
@@ -178,7 +172,8 @@ func ReadCommentsFromUserId(userId int) ([]Comment, error) {
 			c.status AS comment_status, c.created_at AS comment_created_at, c.updated_at AS comment_updated_at, c.updated_by AS comment_updated_by
 		FROM comments c
 		INNER JOIN posts p ON c.post_id = p.i
-		WHERE c.status != 'delete' AND p.status != 'delete' AND c.user_id = ?;
+		WHERE c.status != 'delete' AND p.status != 'delete' AND c.user_id = ?
+		ORDER BY c.id desc;
 	`
 
 	rows, selectError := db.Query(selectQuery, userId) // Query the database
@@ -249,7 +244,8 @@ func ReadAllCommentsForPost(postId int) ([]Comment, error) {
 			INNER JOIN users u
 				ON c.user_id = u.id AND c.status != 'delete' AND u.status != 'delete' AND c.post_id = ?
 			INNER JOIN comment_likes cl
-				ON c.id = cl.comment_id AND cl.status != 'delete';
+				ON c.id = cl.comment_id AND cl.status != 'delete'
+		ORDER BY c.id desc;
 	`
 	rows, selectError := db.Query(selectQuery, postId) // Query the database
 	if selectError != nil {
@@ -337,7 +333,8 @@ func ReadAllCommentsForPostByUserID(postId int, userID int) ([]Comment, error) {
 			INNER JOIN users u
 				ON c.user_id = u.id AND c.status != 'delete' AND u.status != 'delete' AND c.post_id = ?
 			INNER JOIN comment_likes cl
-				ON c.id = cl.comment_id AND cl.status != 'delete';
+				ON c.id = cl.comment_id AND cl.status != 'delete'
+		ORDER BY c.id desc;
 	`
 	rows, selectError := db.Query(selectQuery, postId) // Query the database
 	if selectError != nil {
@@ -424,9 +421,9 @@ func ReadAllCommentsForPostByUserID(postId int, userID int) ([]Comment, error) {
 // func ReadAllCommentsForPostLikedByUser(postId int, userId int) ([]Comment, error) {
 // 	db := utils.OpenDBConnection()
 // 	defer db.Close() // Close the connection after the function finishes
-
+//
 // 	var comments []Comment
-
+//
 // 	// Updated query to join comments with posts
 // 	selectQuery := `
 // 		SELECT
@@ -447,12 +444,12 @@ func ReadAllCommentsForPostByUserID(postId int, userID int) ([]Comment, error) {
 // 		return nil, selectError
 // 	}
 // 	defer rows.Close() // Ensure rows are closed after processing
-
+//
 // 	// Iterate over rows and populate the slice
 // 	for rows.Next() {
 // 		var comment Comment
 // 		var user userManagementModels.User
-
+//
 // 		err := rows.Scan(
 // 			// Map post fields
 // 			&user.ID,
@@ -465,7 +462,7 @@ func ReadAllCommentsForPostByUserID(postId int, userID int) ([]Comment, error) {
 // 			&user.CreatedAt,
 // 			&user.UpdatedAt,
 // 			&user.UpdatedBy,
-
+//
 // 			// Map comment fields
 // 			&comment.ID,
 // 			&comment.UserId,
@@ -477,22 +474,22 @@ func ReadAllCommentsForPostByUserID(postId int, userID int) ([]Comment, error) {
 // 			&comment.NumberOfLikes,
 // 			&comment.NumberOfDislikes,
 // 		)
-
+//
 // 		if err != nil {
 // 			return nil, err
 // 		}
-
+//
 // 		// Assign the post to the comment
 // 		comment.User = user
-
+//
 // 		comments = append(comments, comment)
 // 	}
-
+//
 // 	// Check for any errors during the iteration
 // 	if err := rows.Err(); err != nil {
 // 		return nil, err
 // 	}
-
+//
 // 	return comments, nil
 // }
 
@@ -513,6 +510,7 @@ func ReadAllCommentsOfUserForPost(postId int, userId int) ([]Comment, error) {
 		INNER JOIN posts p ON c.post_id = p.id AND p.status != 'delete' AND c.status != 'delete' AND p.id = ?
 		INNER JOIN users u ON c.user_id = u.id AND u.status != 'delete'
 		where u.id = ?
+		ORDER BY c.id desc
 	`
 	// Query the records
 	rows, selectError := db.Query(selectQuery, postId, userId)

@@ -180,7 +180,7 @@ func ReadAllPosts() ([]Post, error) {
 				AND c.status = 'enable'
 		WHERE p.status != 'delete'
 			AND u.status != 'delete'
-		ORDER BY p.created_at desc;
+		ORDER BY p.id desc;
     `)
 	if selectError != nil {
 		return nil, selectError
@@ -252,7 +252,8 @@ func ReadPostsByUserId(userId int) ([]Post, error) {
 				ON pc.category_id = c.id
 				AND c.status = 'enable'
 		WHERE p.status != 'delete'
-			AND u.status != 'delete';
+			AND u.status != 'delete'
+		ORDER BY p.id desc;
     `, userId)
 	if selectError != nil {
 		return nil, selectError

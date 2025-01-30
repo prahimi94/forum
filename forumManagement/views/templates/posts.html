@@ -7,7 +7,7 @@
                     <span class="badge bg-warning text-dark">{{.Name}}</span>
                 {{end}}
                 <p>{{.Description}}</p>
-                <small>Author: {{.User.Username}} | Created: {{.CreatedAt}}</small>
+                <small>Author: {{.User.Username}} | Created: {{.CreatedAt | formatDate }}</small>
             </div>
         </a>
     {{end}}

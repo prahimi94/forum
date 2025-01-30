@@ -209,6 +209,16 @@ func RedirectToHome(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/home/", http.StatusFound)
 }
 
+func RedirectToPrevPage(w http.ResponseWriter, r *http.Request) {
+	referrer := r.Header.Get("Referer")
+	if referrer == "" {
+		referrer = "/"
+	}
+
+	// Redirect back to the original page to reload it
+	http.Redirect(w, r, referrer, http.StatusSeeOther)
+}
+
 func Logout(w http.ResponseWriter, r *http.Request) {
 	loginStatus, _, sessionToken, checkLoginError := CheckLogin(r)
 	if checkLoginError != nil {
