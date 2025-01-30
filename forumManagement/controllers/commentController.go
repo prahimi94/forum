@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	userManagementControllers "forum/userManagement/controllers"
+	models "forum/forumManagement/models"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -169,4 +170,32 @@ func submitComment(w http.ResponseWriter, r *http.Request) {
 	// } else {
 	// 	fmt.Println("Comment added successfully!")
 	// }
+}
+
+func likeComment(w http.ResponseWriter, r *http.Request){
+	if r.Method != http.MethodPost {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
+		return
+	}
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(r)
+	if checkLoginError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	if loginStatus {
+		fmt.Println("logged in userid is: ", loginUser.ID)
+		// return
+	} else {
+		fmt.Println("user is not logged in")
+	}
+	err := r.ParseForm()
+	if err != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
+		return
+	}
+	Type := r.FormValue("like_buttons")
+	commentUUID := r.FormValue("comment_uuid")
+
+	models.InsertCommentLike(Type, commentUUID,loginUser.ID)
+	
 }

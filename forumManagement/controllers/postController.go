@@ -97,7 +97,7 @@ func ReadPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if loginStatus {
-		comments, err := models.ReadAllCommentsOfUserForPost(post.ID, loginUser.ID)
+		comments, err := models.ReadAllCommentsForPostByUserID(post.ID, loginUser.ID)
 		if err != nil {
 			fmt.Println(err)
 			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
