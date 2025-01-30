@@ -41,7 +41,10 @@ func ReadAllPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpl, err := template.ParseFiles(
+	// Create a template with a function map
+	tmpl, err := template.New("posts.html").Funcs(template.FuncMap{
+		"formatDate": utils.FormatDate, // Register function globally
+	}).ParseFiles(
 		publicUrl + "posts.html",
 	)
 	if err != nil {
@@ -115,7 +118,10 @@ func ReadPost(w http.ResponseWriter, r *http.Request) {
 		data_obj_sender.Comments = comments
 	}
 
-	tmpl, err := template.ParseFiles(
+	// Create a template with a function map
+	tmpl, err := template.New("post_details.html").Funcs(template.FuncMap{
+		"formatDate": utils.FormatDate, // Register function globally
+	}).ParseFiles(
 		publicUrl+"post_details.html",
 		publicUrl+"templates/header.html",
 		publicUrl+"templates/navbar.html",
@@ -126,10 +132,10 @@ func ReadPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Execute template with data
 	err = tmpl.Execute(w, data_obj_sender)
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
 	}
 }
 

@@ -27,6 +27,8 @@ func main() {
 	http.HandleFunc("/submitPost", forumManagementControllers.SubmitPost) /*post method*/
 	http.HandleFunc("/post/", forumManagementControllers.ReadPost)
 
+	http.HandleFunc("/submitComment", forumManagementControllers.SubmitComment) /*post method*/
+
 	// forumManagement.InsertPost("first post", "first post description", []int{1, 2}, 1)
 	// forumManagement.UpdatePost(1, "first post", "first post description updated", []int{2, 3}, 1)
 	// forumManagement.UpdateStatusPost(1, "enable", 1)

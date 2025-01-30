@@ -3,10 +3,11 @@ package controller
 import (
 	"fmt"
 	errorManagementControllers "forum/errorManagement/controllers"
+	"forum/forumManagement/models"
 	"net/http"
+	"strconv"
 
 	userManagementControllers "forum/userManagement/controllers"
-	models "forum/forumManagement/models"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -122,7 +123,7 @@ func createComment(w http.ResponseWriter, r *http.Request) {
 	// }
 }
 
-func submitComment(w http.ResponseWriter, r *http.Request) {
+func SubmitComment(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
 		return
@@ -145,31 +146,29 @@ func submitComment(w http.ResponseWriter, r *http.Request) {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
 	}
-	post_id := r.FormValue("post_id")
+	post_id_str := r.FormValue("post_id")
 	description := r.FormValue("description")
-	if len(post_id) == 0 || len(description) == 0 {
+	if len(post_id_str) == 0 || len(description) == 0 {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
 	}
 
-	// comment := &models.Comment{
-	// 	PostId:      post_id,
-	// 	Description: description,
-	// }
+	post_id, err := strconv.Atoi(post_id_str)
+	if err != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
 
-	// // Insert a record while checking duplicates
-	// _, insertError := models.InsertComment(comment)
-	// if insertError != nil {
-	// 	if errors.Is(insertError, sql.ErrNoRows) {
-	// 		// todo show toast
-	// 		fmt.Println("Comment already exists!")
-	// 	} else {
-	// 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-	// 	}
-	// 	return
-	// } else {
-	// 	fmt.Println("Comment added successfully!")
-	// }
+	// Insert a record while checking duplicates
+	_, insertError := models.InsertComment(post_id, loginUser.ID, description)
+	if insertError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	} else {
+		fmt.Println("Comment added successfully!")
+	}
+
+	userManagementControllers.RedirectToPrevPage(w, r)
 }
 
 func likeComment(w http.ResponseWriter, r *http.Request){
@@ -197,5 +196,5 @@ func likeComment(w http.ResponseWriter, r *http.Request){
 	commentUUID := r.FormValue("comment_uuid")
 
 	models.InsertCommentLike(Type, commentUUID,loginUser.ID)
-	
+
 }

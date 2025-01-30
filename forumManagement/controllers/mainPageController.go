@@ -4,6 +4,7 @@ import (
 	"fmt"
 	errorManagementControllers "forum/errorManagement/controllers"
 	"forum/forumManagement/models"
+	"forum/utils"
 	"net/http"
 	"text/template"
 
@@ -62,7 +63,10 @@ func MainPageHandler(w http.ResponseWriter, r *http.Request) {
 		Categories: categories,
 	}
 
-	tmpl, err := template.ParseFiles(
+	// Create a template with a function map
+	tmpl, err := template.New("index.html").Funcs(template.FuncMap{
+		"formatDate": utils.FormatDate, // Register function globally
+	}).ParseFiles(
 		publicUrl+"index.html",
 		publicUrl+"templates/header.html",
 		publicUrl+"templates/navbar.html",
@@ -129,7 +133,10 @@ func HomePageHandler(w http.ResponseWriter, r *http.Request) {
 		Categories: categories,
 	}
 
-	tmpl, err := template.ParseFiles(
+	// Create a template with a function map
+	tmpl, err := template.New("home.html").Funcs(template.FuncMap{
+		"formatDate": utils.FormatDate, // Register function globally
+	}).ParseFiles(
 		publicUrl+"home.html",
 		publicUrl+"templates/header.html",
 		publicUrl+"templates/navbar.html",
