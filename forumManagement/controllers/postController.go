@@ -118,7 +118,7 @@ func ReadPost(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := template.ParseFiles(
 		publicUrl+"post_details.html",
 		publicUrl+"templates/header.html",
-		publicUrl+"templates/loggedInNavbar.html",
+		publicUrl+"templates/navbar.html",
 		publicUrl+"templates/footer.html",
 	)
 	if err != nil {
@@ -168,7 +168,7 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := template.ParseFiles(
 		publicUrl+"new_post.html",
 		publicUrl+"templates/header.html",
-		publicUrl+"templates/loggedInNavbar.html",
+		publicUrl+"templates/navbar.html",
 		publicUrl+"templates/footer.html",
 	)
 	if err != nil {

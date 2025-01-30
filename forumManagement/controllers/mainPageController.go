@@ -132,7 +132,7 @@ func HomePageHandler(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := template.ParseFiles(
 		publicUrl+"home.html",
 		publicUrl+"templates/header.html",
-		publicUrl+"templates/loggedInNavbar.html",
+		publicUrl+"templates/navbar.html",
 		publicUrl+"templates/posts.html",
 		publicUrl+"templates/footer.html",
 	)
