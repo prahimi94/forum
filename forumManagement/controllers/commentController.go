@@ -162,16 +162,17 @@ func SubmitComment(w http.ResponseWriter, r *http.Request) {
 	// Insert a record while checking duplicates
 	_, insertError := models.InsertComment(post_id, loginUser.ID, description)
 	if insertError != nil {
+		fmt.Println(insertError)
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	} else {
 		fmt.Println("Comment added successfully!")
 	}
-
 	userManagementControllers.RedirectToPrevPage(w, r)
+
 }
 
-func likeComment(w http.ResponseWriter, r *http.Request){
+func LikeComment(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
 		return
@@ -192,9 +193,29 @@ func likeComment(w http.ResponseWriter, r *http.Request){
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
 	}
-	Type := r.FormValue("like_buttons")
-	commentUUID := r.FormValue("comment_uuid")
+	commentID := r.FormValue("comment_id")
+	commentIDInt, _ := strconv.Atoi(commentID)
 
-	models.InsertCommentLike(Type, commentUUID,loginUser.ID)
+	liked, checkError := models.CommentHasLiked(loginUser.ID, commentIDInt)
+	if checkError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+
+	if liked {
+		var Type string
+		like := r.FormValue("like")
+		dislike := r.FormValue("dislike")
+		if like == "like" {
+			Type = like
+		} else if dislike == "dislike" {
+			Type = dislike
+		}
+		models.InsertCommentLike(Type, commentIDInt, loginUser.ID)
+		userManagementControllers.RedirectToPrevPage(w, r)
+	} else {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
+		return
+	}
 
 }

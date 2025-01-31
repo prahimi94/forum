@@ -147,3 +147,21 @@ func ReadAllCommentsLikedByUserId(userId int, Type string) ([]Comment, error) {
 	return comments, nil
 
 }
+
+func CommentHasLiked(userId int, commentID int) (bool, error) {
+	db := utils.OpenDBConnection()
+	defer db.Close() // Close the connection after the function finishes
+	selectQuery := `SELECT *
+		FROM comment_likes cl
+		WHERE cl.user_id = ? AND cl.comment_id = ?
+	`
+	rows, insertErr := db.Query(selectQuery, userId, commentID)
+	if insertErr != nil {
+		// Check if the error is a SQLite constraint violation
+		return false, insertErr
+	}
+	for rows.Next() {
+		return false, nil
+	}
+	return true, nil
+}

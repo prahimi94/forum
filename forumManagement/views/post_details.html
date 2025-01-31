@@ -109,7 +109,22 @@
                         <h5 class="mt-2">{{.User.Username}}</h5>
                         <p>{{.CreatedAt | formatDate }}</p>
                         <small>{{.Description}}</small>
+                        <div>number of likes: {{.NumberOfLikes}}</div>
+                        <div>number of dislikes {{.NumberOfDislikes}}</div>
                     </div>
+                    <form method="post" action="/likeComment">
+                        <div class="mb-3">
+                            <input type="hidden" id="comment_id" name="comment_id" value="{{.ID}}">
+                        </div>
+                        <label>
+                            <input type="radio" name="like" value="like"> like
+                          </label><br>
+                      
+                          <label>
+                            <input type="radio" name="dislike" value="dislike" > dislike
+                          </label><br>
+                          <button class="btn btn-success" type="submit" class="btn btn-success w-100">send</button>
+                    </form>
                 {{end}}
             </div>
         </div>
