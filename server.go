@@ -31,6 +31,9 @@ func main() {
 	http.HandleFunc("/updatePost", forumManagementControllers.UpdatePost) /*post method*/
 	http.HandleFunc("/deletePost", forumManagementControllers.DeletePost) /*post method*/
 
+	http.HandleFunc("/updateComment", forumManagementControllers.UpdatePost)    /*post method*/
+	http.HandleFunc("/deleteComment", forumManagementControllers.DeleteComment) /*post method*/
+
 	// forumManagement.InsertPost("first post", "first post description", []int{1, 2}, 1)
 	// forumManagement.UpdatePost(1, "first post", "first post description updated", []int{2, 3}, 1)
 	// forumManagement.UpdateStatusPost(1, "enable", 1)

@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	errorManagementControllers "forum/errorManagement/controllers"
 	"forum/forumManagement/models"
@@ -218,4 +220,123 @@ func LikeComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+}
+
+func UpdateComment(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
+		return
+	}
+
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(r)
+	if checkLoginError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	if loginStatus {
+		fmt.Println("logged in userid is: ", loginUser.ID)
+		// return
+	} else {
+		fmt.Println("user is not logged in")
+	}
+
+	err := r.ParseForm()
+	if err != nil {
+		fmt.Println(err)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
+		return
+	}
+
+	idStr := r.FormValue("comment_id")
+	post_uuid := r.FormValue("post_uuid")
+	description := r.FormValue("description")
+
+	if len(idStr) == 0 || len(post_uuid) == 0 || len(description) == 0 {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
+		return
+	}
+
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+
+	comment := &models.Comment{
+		ID:          id,
+		Description: description,
+		UserId:      loginUser.ID,
+	}
+
+	// Update a record while checking duplicates
+	updateError := models.UpdateComment(comment, loginUser.ID, description)
+	if updateError != nil {
+		if errors.Is(updateError, sql.ErrNoRows) {
+			// todo show toast
+			fmt.Println("Comment already exists!")
+		} else {
+			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		}
+		return
+	} else {
+		fmt.Println("Comment updated successfully!")
+	}
+
+	http.Redirect(w, r, "/post/"+post_uuid, http.StatusFound)
+}
+
+func DeleteComment(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
+		return
+	}
+
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(r)
+	if checkLoginError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	if loginStatus {
+		fmt.Println("logged in userid is: ", loginUser.ID)
+		// return
+	} else {
+		fmt.Println("user is not logged in")
+	}
+
+	err := r.ParseForm()
+	if err != nil {
+		fmt.Println(err)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
+		return
+	}
+
+	idStr := r.FormValue("comment_id")
+	post_uuid := r.FormValue("post_uuid")
+
+	if len(idStr) == 0 || len(post_uuid) == 0 {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
+		return
+	}
+
+	comment_id, err := strconv.Atoi(idStr)
+	if err != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+
+	// Update a record while checking duplicates
+	updateError := models.UpdateCommentStatus(comment_id, "delete", loginUser.ID)
+	if updateError != nil {
+		if errors.Is(updateError, sql.ErrNoRows) {
+			// todo show toast
+			fmt.Println("Comment already exists!")
+		} else {
+			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		}
+		return
+	} else {
+		fmt.Println("Post delete successfully!")
+	}
+
+	http.Redirect(w, r, "/post/"+post_uuid, http.StatusFound)
 }

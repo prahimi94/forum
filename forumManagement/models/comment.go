@@ -61,16 +61,16 @@ func UpdateComment(comment *Comment, user_id int, newDescription string) error {
 	return nil
 }
 
-func UpdateCommentStatus(comment *Comment, status string, user_id int) error {
+func UpdateCommentStatus(id int, status string, user_id int) error {
 	db := utils.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
-	updateQuery := `UPDATE posts
+	updateQuery := `UPDATE comments
 					SET status = ?,
 						updated_at = CURRENT_TIMESTAMP,
 						updated_by = ?
 					WHERE id = ?;`
-	_, updateErr := db.Exec(updateQuery, status, user_id, comment.ID)
+	_, updateErr := db.Exec(updateQuery, status, user_id, id)
 	if updateErr != nil {
 		return updateErr
 	}
