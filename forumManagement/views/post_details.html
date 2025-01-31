@@ -84,7 +84,9 @@
     </div>
 
 
-    {{if .LoginUser.ID}}
+    {{ $loginUserID := .LoginUser.ID }}
+
+    {{if $loginUserID}}
     <!-- New comment section -->
     <div class="container p-5">
         <div class="row">
@@ -106,7 +108,7 @@
     </div>
     {{end}}
 
-    {{if .LoginUser.ID}}
+
     <!-- Comments section for logged in users -->
     <div class="container p-5">
         <div class="row">
@@ -120,6 +122,7 @@
                         <div>number of dislikes {{.NumberOfDislikes}}</div>
                     </div>
 
+                    {{ if $loginUserID}}
                     <form method="post" action="/likeComment">
                         <div class="mb-3">
                             <input type="hidden" id="comment_id" name="comment_id" value="{{.ID}}">
@@ -133,30 +136,12 @@
                           </label><br>
                           <button class="btn btn-success" type="submit" class="btn btn-success w-100">send</button>
                     </form>
+                    {{end}}
                 {{end}}
             </div>
         </div>
     </div>
-    {{else}}
-    <!-- Comments section for not logged in users -->
-    <div class="container p-5">
-        <div class="row">
-            <div class="col-md-12">
-                {{range .Comments}}
-                    <div class="post-card">
-                        <h5 class="mt-2">{{.User.Username}}</h5>
-                        <p>{{.CreatedAt | formatDate }}</p>
-                        <small>{{.Description}}</small>
-                        <div>number of likes: {{.NumberOfLikes}}</div>
-                        <div>number of dislikes {{.NumberOfDislikes}}</div>
-                    </div>
-
-                {{end}}
-            </div>
-        </div>
-    </div>
-    {{end}}
-
+    
 
     </div>
 
