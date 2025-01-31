@@ -40,8 +40,8 @@
             <div class="col-md-3">
                 <p>Post</p>
             </div>
-            <div class="col-md-9">
-                <p>{{.Post.Description}}</p>
+            <div class="col-md-9" id="post_description_holder">
+                <p id="description">{{.Post.Description}}</p>
             </div>
         </div>
         <div class="row">
@@ -70,7 +70,7 @@
         {{if eq .LoginUser.ID .Post.UserId}}
         <div class="row">
             <div class="col-md-2">
-                <a class="btn btn-success"><i class="fas fa-edit me-2"></i>Edit Post</a>
+                <a id="editPost" class="btn btn-success"><i class="fas fa-edit me-2"></i>Delete Post</a>
             </div>
             <div class="col-md-2">
                 <a class="btn btn-light"><i class="fas fa-edit me-2"></i>Delete Post</a>
@@ -133,5 +133,17 @@
 
     </div>
 
+    {{template "footer"}}
+
 </body>
 </html>
+
+<script>
+    $('#editPost').on('click', function(e){
+      const description = $('#post_description').html();
+      console.log(description)
+      $('#post_description_holder').html(`<textarea class="form-control" placeholder="Text" rows="4" name="description">description</textarea>`);
+    })
+
+  </script>
+
