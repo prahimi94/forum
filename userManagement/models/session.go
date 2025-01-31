@@ -33,9 +33,23 @@ func InsertSession(session *Session) (*Session, error) {
 	// Set session expiration time
 	session.ExpiresAt = time.Now().Add(12 * time.Hour)
 
+	// Start a transaction for atomicity
+	tx, err := db.Begin()
+	if err != nil {
+		return &Session{}, err
+	}
+
+	updateQuery := `UPDATE sessions SET expires_at = CURRENT_TIMESTAMP WHERE user_id = ? AND expires_at > CURRENT_TIMESTAMP;`
+	_, updateErr := tx.Exec(updateQuery, session.UserId)
+	if updateErr != nil {
+		tx.Rollback()
+		return nil, updateErr
+	}
+
 	insertQuery := `INSERT INTO sessions (session_token, user_id, expires_at) VALUES (?, ?, ?);`
-	_, insertErr := db.Exec(insertQuery, session.SessionToken, session.UserId, session.ExpiresAt)
+	_, insertErr := tx.Exec(insertQuery, session.SessionToken, session.UserId, session.ExpiresAt)
 	if insertErr != nil {
+		tx.Rollback()
 		// Check if the error is a SQLite constraint violation
 		if sqliteErr, ok := insertErr.(interface{ ErrorCode() int }); ok {
 			if sqliteErr.ErrorCode() == 19 { // SQLite constraint violation error code
@@ -44,6 +58,8 @@ func InsertSession(session *Session) (*Session, error) {
 		}
 		return nil, insertErr
 	}
+	tx.Commit()
+
 	return session, nil
 }
 
