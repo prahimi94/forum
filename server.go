@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	forumManagementControllers "forum/forumManagement/controllers"
+	forumManagement "forum/forumManagement/models"
 	userManagementControllers "forum/userManagement/controllers"
 	"log"
 	"net/http"
@@ -11,7 +13,9 @@ import (
 func main() {
 	http.Handle("/static/", http.FileServer(http.Dir("frontend/public/")))
 	http.Handle("/img/", http.FileServer(http.Dir("frontend/public/")))
-
+	//forumManagement.InsertComment(3, 4, "salam khobi?")
+	fmt.Println(forumManagement.ReadAllComments())
+	fmt.Println(forumManagement.ReadAllCommentsForPostByUserID(3,4))
 	// Register route handlers
 	http.HandleFunc("/", forumManagementControllers.MainPageHandler)
 	http.HandleFunc("/home/", forumManagementControllers.HomePageHandler)

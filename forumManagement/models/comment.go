@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	userManagementModels "forum/userManagement/models"
 	"forum/utils"
 	"log"
@@ -87,7 +88,7 @@ func ReadAllComments() ([]Comment, error) {
 		SELECT 
 			p.id AS post_id, p.uuid AS post_uuid, p.title AS post_title, p.description AS post_description, 
 			p.status AS post_status, p.created_at AS post_created_at, p.updated_at AS post_updated_at, p.updated_by AS post_updated_by,
-			c.id AS comment_id, c.user_id AS comment_user_id, c.description AS comment_description, 
+			c.id AS comment_id, c.post_id AS comment_post_id ,c.description AS comment_description,c.user_id AS comment_user_id, 
 			c.status AS comment_status, c.created_at AS comment_created_at, c.updated_at AS comment_updated_at, c.updated_by AS comment_updated_by,
 			u.id AS user_id, u.uuid AS user_uuid, u.username AS user_username, u.name AS user_name, u.type AS user_type, u.email AS user_email,  
 			u.status AS user_status, u.created_at AS user_created_at, u.updated_at AS user_updated_at, u.updated_by AS user_updated_by
@@ -119,6 +120,15 @@ func ReadAllComments() ([]Comment, error) {
 			&post.UpdatedAt,
 			&post.UpdatedBy,
 
+			&comment.ID,
+			&comment.PostId,
+			&comment.Description,
+			&comment.UserId,
+			&comment.Status,
+			&comment.CreatedAt,
+			&comment.UpdatedAt,
+			&comment.UpdatedBy,
+
 			&user.ID,
 			&user.UUID,
 			&user.Username,
@@ -129,15 +139,6 @@ func ReadAllComments() ([]Comment, error) {
 			&user.CreatedAt,
 			&user.UpdatedAt,
 			&user.UpdatedBy,
-
-			&comment.ID,
-			&comment.PostId,
-			&comment.Description,
-			&comment.UserId,
-			&comment.Status,
-			&comment.CreatedAt,
-			&comment.UpdatedAt,
-			&comment.UpdatedBy,
 		)
 
 		if err != nil {
@@ -326,22 +327,21 @@ func ReadAllCommentsForPostByUserID(postId int, userID int) ([]Comment, error) {
 		SELECT 
 			u.id AS user_id, u.uuid AS user_uuid, u.username AS user_username, u.name AS user_name, u.type AS user_type, u.email AS user_email,  
 			u.status AS user_status, u.created_at AS user_created_at, u.updated_at AS user_updated_at, u.updated_by AS user_updated_by,
-			c.id AS comment_id, c.user_id AS comment_user_id, c.description AS comment_description, 
+			c.id AS comment_id, c.post_id as comment_post_id ,c.user_id AS comment_user_id, c.description AS comment_description, 
 			c.status AS comment_status, c.created_at AS comment_created_at, c.updated_at AS comment_updated_at, c.updated_by AS comment_updated_by,
-			cl.type
+			COALESCE(cl.type, '')
 		FROM comments c
 			INNER JOIN users u
 				ON c.user_id = u.id AND c.status != 'delete' AND u.status != 'delete' AND c.post_id = ?
-			INNER JOIN comment_likes cl
+			LEFT JOIN comment_likes cl
 				ON c.id = cl.comment_id AND cl.status != 'delete'
-		ORDER BY c.id desc;
+				ORDER BY c.id desc;
 	`
 	rows, selectError := db.Query(selectQuery, postId) // Query the database
 	if selectError != nil {
 		return nil, selectError
 	}
 	defer rows.Close() // Ensure rows are closed after processing
-
 	// Iterate over rows and populate the slice
 	for rows.Next() {
 		var comment Comment
@@ -362,6 +362,7 @@ func ReadAllCommentsForPostByUserID(postId int, userID int) ([]Comment, error) {
 
 			// Map comment fields
 			&comment.ID,
+			&comment.PostId,
 			&comment.UserId,
 			&comment.Description,
 			&comment.Status,
@@ -371,6 +372,11 @@ func ReadAllCommentsForPostByUserID(postId int, userID int) ([]Comment, error) {
 
 			&Type,
 		)
+		comment.User = user
+		if err != nil {
+			return nil, err
+		}
+
 		if existingComment, found := commentMap[comment.ID]; found {
 			if user.ID == userID {
 				if Type == "like" {
@@ -401,9 +407,6 @@ func ReadAllCommentsForPostByUserID(postId int, userID int) ([]Comment, error) {
 			commentMap[comment.ID] = &comment
 		}
 
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	// Check for any errors during the iteration
@@ -414,7 +417,7 @@ func ReadAllCommentsForPostByUserID(postId int, userID int) ([]Comment, error) {
 	for _, comment := range commentMap {
 		comments = append(comments, *comment)
 	}
-
+	fmt.Println(comments)
 	return comments, nil
 }
 
