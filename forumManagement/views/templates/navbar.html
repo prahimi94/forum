@@ -8,7 +8,20 @@
         <div class="navbar-brand d-flex align-items-center" style="display: grid;grid-auto-flow: column;grid-column-gap: 10px">
             <span class="me-3">Welcome, {{.Name}}</span>
             <a class="nav-link" href="/home/">Home</a>
-            <a class="nav-link" href="/posts/">Posts</a>
+
+            <div class="dropdown ms-3">
+                <div class="nav-link dropdown-toggle" 
+                     style="cursor: pointer;" 
+                     id="myPostsDropDown" data-bs-toggle="dropdown" aria-expanded="false">
+                     My posts
+                </div>
+                <ul class="dropdown-menu" aria-labelledby="myPostsDropDown">
+                    <li><a class="dropdown-item" href="/myCreatedPosts/">My created posts</a></li>
+                    <li><a class="dropdown-item" href="/myLikedPosts/">My liked posts</a></li>
+                </ul>
+            </div>
+
+
             <a class="btn btn-success" href="/newPost/">Create Post</a>
             <div class="dropdown ms-3">
                 <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center dropdown-toggle" 

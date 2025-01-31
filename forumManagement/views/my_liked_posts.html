@@ -1,0 +1,23 @@
+{{template "header"}}
+<body>
+    
+    {{template "navbar" .LoginUser}}
+    
+    
+    <div class="container mt-5">
+        <h3>My Liked Posts</h3>
+        <input type="text" class="form-control my-3" placeholder="Search">
+        
+        <div class="categories mb-3">
+            {{range .Categories}}
+            <button class="btn btn-outline-secondary">{{.Name}}</button>
+            {{end}}
+        </div>
+        
+        
+        {{template "posts" .Posts}}
+    </div>
+    
+    {{template "footer"}}
+</body>
+</html>
