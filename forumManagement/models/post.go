@@ -6,6 +6,7 @@ import (
 	userManagementModels "forum/userManagement/models"
 	"forum/utils"
 	"log"
+	"sort"
 	"time"
 )
 
@@ -229,6 +230,10 @@ func ReadAllPosts() ([]Post, error) {
 		posts = append(posts, *post)
 	}
 
+	sort.Slice(posts, func(i, j int) bool {
+		return posts[i].ID > posts[j].ID
+	})
+
 	return posts, nil
 }
 
@@ -301,6 +306,10 @@ func ReadPostsByUserId(userId int) ([]Post, error) {
 	for _, post := range postMap {
 		posts = append(posts, *post)
 	}
+
+	sort.Slice(posts, func(i, j int) bool {
+		return posts[i].ID > posts[j].ID
+	})
 
 	return posts, nil
 }

@@ -70,10 +70,13 @@
         {{if eq .LoginUser.ID .Post.UserId}}
         <div class="row">
             <div class="col-md-2">
-                <a id="editPost" class="btn btn-success"><i class="fas fa-edit me-2"></i>Delete Post</a>
+                <a id="editPost" class="btn btn-success" href="/editPost/{{.Post.UUID}}"><i class="fas fa-edit me-2"></i>Edit Post</a>
             </div>
             <div class="col-md-2">
-                <a class="btn btn-light"><i class="fas fa-edit me-2"></i>Delete Post</a>
+                <form action="/deletePost" method="post">
+                    <input type="hidden" name="id" value="{{.Post.ID}}">
+                    <button type="submit" class="btn btn-light"><i class="fas fa-edit me-2"></i>Delete Post</button>
+                </form>
             </div>
         </div>
         {{end}}
@@ -94,7 +97,7 @@
                     <div class="mb-3">
                         <textarea class="form-control" placeholder="Text" rows="4" name="description"></textarea>
                     </div>
-                    <button class="btn btn-success" type="submit" class="btn btn-success w-100">Comment</button>
+                    <button class="btn btn-success w-100" type="submit">Comment</button>
                 </form>
             </div>
         </div>
@@ -138,12 +141,12 @@
 </body>
 </html>
 
-<script>
+<!-- <script>
     $('#editPost').on('click', function(e){
       const description = $('#post_description').html();
       console.log(description)
       $('#post_description_holder').html(`<textarea class="form-control" placeholder="Text" rows="4" name="description">description</textarea>`);
     })
 
-  </script>
+  </script> -->
 

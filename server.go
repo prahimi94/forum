@@ -25,8 +25,9 @@ func main() {
 	http.HandleFunc("/likeComment", forumManagementControllers.LikeComment)
 
 	http.HandleFunc("/submitComment", forumManagementControllers.SubmitComment) /*post method*/
-	http.HandleFunc("/editPost", forumManagementControllers.EditPost)
+	http.HandleFunc("/editPost/", forumManagementControllers.EditPost)
 	http.HandleFunc("/updatePost", forumManagementControllers.UpdatePost) /*post method*/
+	http.HandleFunc("/deletePost", forumManagementControllers.DeletePost) /*post method*/
 
 	// forumManagement.InsertPost("first post", "first post description", []int{1, 2}, 1)
 	// forumManagement.UpdatePost(1, "first post", "first post description updated", []int{2, 3}, 1)

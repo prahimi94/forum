@@ -1,7 +1,6 @@
 package models
 
 import (
-	"fmt"
 	userManagementModels "forum/userManagement/models"
 	"forum/utils"
 	"log"
@@ -33,7 +32,6 @@ func InsertComment(postId int, userId int, description string) (int, error) {
 	result, insertErr := db.Exec(insertQuery, postId, description, userId)
 	if insertErr != nil {
 		// Check if the error is a SQLite constraint violation
-		fmt.Println(insertErr)
 		return -1, insertErr
 	}
 	// Retrieve the last inserted ID
@@ -418,6 +416,7 @@ func ReadAllCommentsForPostByUserID(postId int, userID int) ([]Comment, error) {
 	for _, comment := range commentMap {
 		comments = append(comments, *comment)
 	}
+
 	return comments, nil
 }
 

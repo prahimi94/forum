@@ -274,7 +274,7 @@ func EditPost(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("user is not logged in")
 	}
 
-	uuid, errUrl := utils.ExtractUUIDFromUrl(r.URL.Path, "post")
+	uuid, errUrl := utils.ExtractUUIDFromUrl(r.URL.Path, "editPost")
 	if errUrl == "not found" {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.NotFoundError)
 		return
@@ -321,7 +321,7 @@ func EditPost(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdatePost(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPut {
+	if r.Method != http.MethodPost {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
 		return
 	}
@@ -340,19 +340,30 @@ func UpdatePost(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 	if err != nil {
+		fmt.Println(err)
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
 	}
 
+	idStr := r.FormValue("id")
+	uuid := r.FormValue("uuid")
 	title := r.FormValue("title")
 	description := r.FormValue("description")
 	categories := r.Form["categories"]
-	if len(title) == 0 || len(description) == 0 || len(categories) == 0 {
+
+	if len(idStr) == 0 || len(title) == 0 || len(description) == 0 || len(categories) == 0 {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
+		return
+	}
+
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 
 	post := &models.Post{
+		ID:          id,
 		Title:       title,
 		Description: description,
 		UserId:      loginUser.ID,
@@ -384,5 +395,60 @@ func UpdatePost(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Post updated successfully!")
 	}
 
-	userManagementControllers.RedirectToPrevPage(w, r)
+	http.Redirect(w, r, "/post/"+uuid, http.StatusFound)
+}
+
+func DeletePost(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
+		return
+	}
+
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(r)
+	if checkLoginError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	if loginStatus {
+		fmt.Println("logged in userid is: ", loginUser.ID)
+		// return
+	} else {
+		fmt.Println("user is not logged in")
+	}
+
+	err := r.ParseForm()
+	if err != nil {
+		fmt.Println(err)
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
+		return
+	}
+
+	idStr := r.FormValue("id")
+
+	if len(idStr) == 0 {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
+		return
+	}
+
+	post_id, err := strconv.Atoi(idStr)
+	if err != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+
+	// Update a record while checking duplicates
+	updateError := models.UpdateStatusPost(post_id, "delete", loginUser.ID)
+	if updateError != nil {
+		if errors.Is(updateError, sql.ErrNoRows) {
+			// todo show toast
+			fmt.Println("Post already exists!")
+		} else {
+			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		}
+		return
+	} else {
+		fmt.Println("Post delete successfully!")
+	}
+
+	userManagementControllers.RedirectToHome(w, r)
 }
