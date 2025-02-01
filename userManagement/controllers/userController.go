@@ -32,7 +32,7 @@ func AuthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if loginStatus {
 		fmt.Println("logged in userid is: ", user.ID)
-		RedirectToHome(w, r)
+		RedirectToIndex(w, r)
 		return
 	}
 
@@ -63,7 +63,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if loginStatus {
 		fmt.Println("logged in userid is: ", user.ID)
-		RedirectToHome(w, r)
+		RedirectToIndex(w, r)
 		return
 	}
 	err := r.ParseForm()
@@ -106,7 +106,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	sessionGenerator(w, r, userId)
 
-	RedirectToHome(w, r)
+	RedirectToIndex(w, r)
 }
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
@@ -122,7 +122,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if loginStatus {
 		fmt.Println("logged in userid is: ", user.ID)
-		RedirectToHome(w, r)
+		RedirectToIndex(w, r)
 		return
 	}
 
@@ -149,20 +149,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	sessionGenerator(w, r, userId)
 
-	RedirectToHome(w, r)
-
-	// tmpl, err := template.ParseFiles(
-	// 	publicUrl + "home.html",
-	// )
-	// if err != nil {
-	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-	// 	return
-	// }
-	// err = tmpl.Execute(w, nil)
-	// if err != nil {
-	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-	// 	return
-	// }
+	RedirectToIndex(w, r)
 }
 
 func sessionGenerator(w http.ResponseWriter, r *http.Request, userId int) {

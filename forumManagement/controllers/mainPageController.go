@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	errorManagementControllers "forum/errorManagement/controllers"
 	"forum/forumManagement/models"
 	"forum/utils"
@@ -28,19 +27,6 @@ func MainPageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(r)
-	if checkLoginError != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
-	if loginStatus {
-		fmt.Println("logged in userid is: ", loginUser.ID)
-		userManagementControllers.RedirectToHome(w, r)
-		return
-	} else {
-		fmt.Println("user is not logged in")
-	}
-
 	categories, err := models.ReadAllCategories()
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
@@ -58,9 +44,18 @@ func MainPageHandler(w http.ResponseWriter, r *http.Request) {
 		Posts      []models.Post
 		Categories []models.Category
 	}{
-		LoginUser:  loginUser,
+		LoginUser:  userManagementModels.User{},
 		Posts:      posts,
 		Categories: categories,
+	}
+
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(r)
+	if checkLoginError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	if loginStatus {
+		data_obj_sender.LoginUser = loginUser
 	}
 
 	// Create a template with a function map
@@ -71,75 +66,6 @@ func MainPageHandler(w http.ResponseWriter, r *http.Request) {
 		publicUrl+"templates/header.html",
 		publicUrl+"templates/navbar.html",
 		publicUrl+"templates/hero.html",
-		publicUrl+"templates/posts.html",
-		publicUrl+"templates/footer.html",
-	)
-	if err != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
-
-	err = tmpl.Execute(w, data_obj_sender)
-	if err != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
-}
-
-func HomePageHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
-		return
-	}
-
-	if r.URL.Path != "/home/" {
-		// If the URL is not exactly "/", respond with 404
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.NotFoundError)
-		return
-	}
-
-	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(r)
-	if checkLoginError != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
-	if loginStatus {
-		fmt.Println("logged in userid is: ", loginUser.ID)
-	} else {
-		fmt.Println("user is not logged in")
-		userManagementControllers.RedirectToIndex(w, r)
-		return
-	}
-
-	categories, err := models.ReadAllCategories()
-	if err != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
-
-	posts, err := models.ReadAllPosts()
-	if err != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
-
-	data_obj_sender := struct {
-		LoginUser  userManagementModels.User
-		Posts      []models.Post
-		Categories []models.Category
-	}{
-		LoginUser:  loginUser,
-		Posts:      posts,
-		Categories: categories,
-	}
-
-	// Create a template with a function map
-	tmpl, err := template.New("home.html").Funcs(template.FuncMap{
-		"formatDate": utils.FormatDate, // Register function globally
-	}).ParseFiles(
-		publicUrl+"home.html",
-		publicUrl+"templates/header.html",
-		publicUrl+"templates/navbar.html",
 		publicUrl+"templates/posts.html",
 		publicUrl+"templates/footer.html",
 	)

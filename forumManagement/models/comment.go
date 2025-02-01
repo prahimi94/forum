@@ -61,16 +61,16 @@ func UpdateComment(comment *Comment, user_id int, newDescription string) error {
 	return nil
 }
 
-func UpdateCommentStatus(comment *Comment, status string, user_id int) error {
+func UpdateCommentStatus(id int, status string, user_id int) error {
 	db := utils.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
-	updateQuery := `UPDATE posts
+	updateQuery := `UPDATE comments
 					SET status = ?,
 						updated_at = CURRENT_TIMESTAMP,
 						updated_by = ?
 					WHERE id = ?;`
-	_, updateErr := db.Exec(updateQuery, status, user_id, comment.ID)
+	_, updateErr := db.Exec(updateQuery, status, user_id, id)
 	if updateErr != nil {
 		return updateErr
 	}
@@ -237,13 +237,13 @@ func ReadAllCommentsForPost(postId int) ([]Comment, error) {
 		SELECT 
 			u.id AS user_id, u.uuid AS user_uuid, u.username AS user_username, u.name AS user_name, u.type AS user_type, u.email AS user_email,  
 			u.status AS user_status, u.created_at AS user_created_at, u.updated_at AS user_updated_at, u.updated_by AS user_updated_by,
-			c.id AS comment_id, c.user_id AS comment_user_id, c.description AS comment_description, 
+			c.id AS comment_id, c.post_id as comment_post_id, c.user_id AS comment_user_id, c.description AS comment_description, 
 			c.status AS comment_status, c.created_at AS comment_created_at, c.updated_at AS comment_updated_at, c.updated_by AS comment_updated_by,
-			cl.type
+			COALESCE(cl.type, '')
 		FROM comments c
 			INNER JOIN users u
 				ON c.user_id = u.id AND c.status != 'delete' AND u.status != 'delete' AND c.post_id = ?
-			INNER JOIN comment_likes cl
+			LEFT JOIN comment_likes cl
 				ON c.id = cl.comment_id AND cl.status != 'delete'
 		ORDER BY c.id desc;
 	`
@@ -273,6 +273,7 @@ func ReadAllCommentsForPost(postId int) ([]Comment, error) {
 
 			// Map comment fields
 			&comment.ID,
+			&comment.PostId,
 			&comment.UserId,
 			&comment.Description,
 			&comment.Status,
@@ -282,6 +283,11 @@ func ReadAllCommentsForPost(postId int) ([]Comment, error) {
 
 			&Type,
 		)
+		comment.User = user
+		if err != nil {
+			return nil, err
+		}
+
 		if existingComment, found := commentMap[comment.ID]; found {
 			if Type == "like" {
 				existingComment.NumberOfLikes++
@@ -298,9 +304,6 @@ func ReadAllCommentsForPost(postId int) ([]Comment, error) {
 			commentMap[comment.ID] = &comment
 		}
 
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	// Check for any errors during the iteration

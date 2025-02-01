@@ -192,3 +192,53 @@ func ReadCategoryById(categoryId int) (Category, error) {
 
 	return category, nil
 }
+
+func ReadCategoryByName(categoryName string) (Category, error) {
+	db := utils.OpenDBConnection()
+	defer db.Close() // Close the connection after the function finishes
+
+	// Query the records
+	rows, selectError := db.Query(`
+        SELECT c.id as category_id, c.name as category_name, c.status as category_status, 
+               c.created_at as category_created_at, c.created_by as category_created_by, 
+               c.updated_at as category_updated_at, c.updated_by as category_updated_by,
+               u.id as user_id, u.name as user_name, u.username as user_username, u.email as user_email
+        FROM categories c
+        INNER JOIN users u ON c.created_by = u.id  -- Fixed the JOIN to use the correct column for user relation
+        WHERE c.status != 'delete'
+        AND c.name = ?;
+    `, categoryName)
+	if selectError != nil {
+		return Category{}, selectError
+	}
+	defer rows.Close()
+
+	// Variable to hold the category and user data
+	var category Category
+	var user userManagementModels.User
+
+	// Scan the result into variables
+	if rows.Next() {
+		err := rows.Scan(
+			&category.ID, &category.Name, &category.Status, &category.CreatedAt, &category.CreatedBy,
+			&category.UpdatedAt, &category.UpdatedBy,
+			&user.ID, &user.Name, &user.Username, &user.Email,
+		)
+		if err != nil {
+			return Category{}, fmt.Errorf("error scanning row: %v", err)
+		}
+
+		// Assign the user to the category
+		category.User = user
+	} else {
+		// If no category found with the given Name
+		return Category{}, fmt.Errorf("category with Name %v not found", categoryName)
+	}
+
+	// Check for any errors during row iteration
+	if err := rows.Err(); err != nil {
+		return Category{}, fmt.Errorf("row iteration error: %v", err)
+	}
+
+	return category, nil
+}

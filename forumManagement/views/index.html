@@ -1,10 +1,17 @@
 {{template "header"}}
 <body>
+    
+    {{if .LoginUser.ID }}
+
+    {{template "navbar" .LoginUser}}
+    
+    {{else}}
+
     {{template "navbar"}}
     
     {{template "hero"}}
 
-
+    {{end}}
     
     <div class="container mt-5">
         <h3>Recent Posts</h3>
@@ -12,13 +19,13 @@
         
         <div class="categories mb-3">
             {{range .Categories}}
-            <button class="btn btn-outline-secondary">{{.Name}}</button>
+            <a class="btn btn-outline-secondary" href="/posts/{{.Name}}">{{.Name}}</a>
             {{end}}
         </div>
         
+        
         {{template "posts" .Posts}}
     </div>
-    
     
     {{template "footer"}}
 </body>

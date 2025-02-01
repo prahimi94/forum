@@ -1,7 +1,7 @@
 package models
 
 import (
-	"database/sql"
+	"errors"
 	"fmt"
 	userManagementModels "forum/userManagement/models"
 	"forum/utils"
@@ -30,11 +30,16 @@ func InsertPostLike(postLike *PostLike) (int, error) {
 	result, insertErr := db.Exec(insertQuery, postLike.Type, postLike.PostId, postLike.UserId)
 	if insertErr != nil {
 		// Check if the error is a SQLite constraint violation
+		var ErrDuplicatePostLike = errors.New("duplicate post like")
 		if sqliteErr, ok := insertErr.(interface{ ErrorCode() int }); ok {
-			if sqliteErr.ErrorCode() == 19 { // SQLite constraint violation error code
-				return -1, sql.ErrNoRows // Return custom error to indicate a duplicate
+			// if sqliteErr.ErrorCode() == 19 { // SQLite constraint violation error code
+			// 	return -1, sql.ErrNoRows // Return custom error to indicate a duplicate
+			// }
+			if sqliteErr.ErrorCode() == 19 {
+				return -1, ErrDuplicatePostLike
 			}
 		}
+
 		return -1, insertErr
 	}
 

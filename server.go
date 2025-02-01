@@ -14,7 +14,7 @@ func main() {
 
 	// Register route handlers
 	http.HandleFunc("/", forumManagementControllers.MainPageHandler)
-	http.HandleFunc("/home/", forumManagementControllers.HomePageHandler)
+	// http.HandleFunc("/home/", forumManagementControllers.HomePageHandler)
 	http.HandleFunc("/auth/", userManagementControllers.AuthHandler)
 	http.HandleFunc("/logout/", userManagementControllers.Logout)
 	http.HandleFunc("/register", userManagementControllers.RegisterHandler) /*post method*/
@@ -24,6 +24,7 @@ func main() {
 	http.HandleFunc("/myCreatedPosts/", forumManagementControllers.ReadMyCreatedPosts)
 	http.HandleFunc("/myLikedPosts/", forumManagementControllers.ReadMyLikedPosts)
 	http.HandleFunc("/post/", forumManagementControllers.ReadPost)
+	http.HandleFunc("/posts/", forumManagementControllers.ReadPostsByCategory)
 	http.HandleFunc("/likeComment", forumManagementControllers.LikeComment)
 	http.HandleFunc("/likePost", forumManagementControllers.LikePost)
 
@@ -31,6 +32,9 @@ func main() {
 	http.HandleFunc("/editPost/", forumManagementControllers.EditPost)
 	http.HandleFunc("/updatePost", forumManagementControllers.UpdatePost) /*post method*/
 	http.HandleFunc("/deletePost", forumManagementControllers.DeletePost) /*post method*/
+
+	http.HandleFunc("/updateComment", forumManagementControllers.UpdatePost)    /*post method*/
+	http.HandleFunc("/deleteComment", forumManagementControllers.DeleteComment) /*post method*/
 
 	// forumManagement.InsertPost("first post", "first post description", []int{1, 2}, 1)
 	// forumManagement.UpdatePost(1, "first post", "first post description updated", []int{2, 3}, 1)

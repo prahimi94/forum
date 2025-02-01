@@ -241,6 +241,83 @@ func ReadAllPosts() ([]Post, error) {
 	return posts, nil
 }
 
+func ReadPostsByCategoryName(category_name string) ([]Post, error) {
+	db := utils.OpenDBConnection()
+	defer db.Close() // Close the connection after the function finishes
+
+	// Query the records
+	rows, selectError := db.Query(`
+        SELECT p.id as post_id, p.uuid as post_uuid, p.title as post_title, p.description as post_description, p.status as post_status, p.created_at as post_created_at, p.updated_at as post_updated_at, p.updated_by as post_updated_by,
+			u.id as user_id, u.name as user_name, u.username as user_username, u.email as user_email,
+			c.id as category_id, c.name as category_name
+		FROM posts p
+			INNER JOIN users u
+				ON p.user_id = u.id
+			INNER JOIN post_categories pc
+				ON p.id = pc.post_id
+				AND pc.status = 'enable'
+			INNER JOIN categories c
+				ON pc.category_id = c.id
+				AND c.status = 'enable'
+				AND c.name = ?
+		WHERE p.status != 'delete'
+			AND u.status != 'delete'
+		ORDER BY p.id desc;
+    `, category_name)
+	if selectError != nil {
+		return nil, selectError
+	}
+	defer rows.Close()
+
+	var posts []Post
+	// Map to track posts by their ID to avoid duplicates
+	postMap := make(map[int]*Post)
+
+	for rows.Next() {
+		var post Post
+		var user userManagementModels.User
+		var category Category
+
+		// Scan the post and user data
+		err := rows.Scan(
+			&post.ID, &post.UUID, &post.Title, &post.Description, &post.Status,
+			&post.CreatedAt, &post.UpdatedAt, &post.UpdatedBy, &post.UserId,
+			&user.Name, &user.Username, &user.Email,
+			&category.ID, &category.Name,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("error scanning row: %v", err)
+		}
+
+		// Check if the post already exists in the postMap
+		if existingPost, found := postMap[post.ID]; found {
+			// If the post exists, append the category to the existing post's Categories
+			existingPost.Categories = append(existingPost.Categories, category)
+		} else {
+			// If the post doesn't exist in the map, add it and initialize the Categories field
+			post.User = user
+			post.Categories = []Category{category}
+			postMap[post.ID] = &post
+		}
+	}
+
+	// Check for any errors during row iteration
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("row iteration error: %v", err)
+	}
+
+	// Convert the map of posts into a slice
+	for _, post := range postMap {
+		posts = append(posts, *post)
+	}
+
+	sort.Slice(posts, func(i, j int) bool {
+		return posts[i].ID > posts[j].ID
+	})
+
+	return posts, nil
+}
+
 func ReadPostsByUserId(userId int) ([]Post, error) {
 	db := utils.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes

@@ -7,7 +7,7 @@
             <div class="col-md-12">
                 <ul class="breadcrumb">
                     <li>
-                        <a class="nav-link text-secondary" href="/home/">← Back to posts</a>
+                        <a class="nav-link text-secondary" href="/">← Back to posts</a>
                     </li>
                 </ul>
             </div>
@@ -117,7 +117,10 @@
     </div>
 
 
-    {{if .LoginUser.ID}}
+    {{ $loginUserID := .LoginUser.ID }}
+    {{ $postUuid := .Post.UUID }}
+
+    {{if $loginUserID}}
     <!-- New comment section -->
     <div class="container p-5">
         <div class="row">
@@ -139,7 +142,7 @@
     </div>
     {{end}}
 
-    {{if .LoginUser.ID}}
+
     <!-- Comments section for logged in users -->
     <div class="container p-5">
         <div class="row">
@@ -153,6 +156,22 @@
                         <div>number of dislikes {{.NumberOfDislikes}}</div>
                     </div>
 
+                    {{if eq .User.ID $loginUserID}}
+                    <div class="row">
+                        <div class="col-md-2">
+                            <a id="editComment" class="btn btn-success" href="/editComment/{{.ID}}"><i class="fas fa-edit me-2"></i>Edit Comment</a>
+                        </div>
+                        <div class="col-md-2">
+                            <form action="/deleteComment" method="post">
+                                <input type="hidden" name="post_uuid" value="{{$postUuid}}">
+                                <input type="hidden" name="comment_id" value="{{.ID}}">
+                                <button type="submit" class="btn btn-light"><i class="fas fa-edit me-2"></i>Delete Comment</button>
+                            </form>
+                        </div>
+                    </div>
+                    {{end}}
+
+                    {{if $loginUserID}}
                     <form method="post" action="/likeComment">
                         <div class="mb-3">
                             <input type="hidden" id="comment_id" name="comment_id" value="{{.ID}}">
@@ -166,30 +185,12 @@
                           </label><br>
                           <button class="btn btn-success" type="submit" class="btn btn-success w-100">send</button>
                     </form>
+                    {{end}}
                 {{end}}
             </div>
         </div>
     </div>
-    {{else}}
-    <!-- Comments section for not logged in users -->
-    <div class="container p-5">
-        <div class="row">
-            <div class="col-md-12">
-                {{range .Comments}}
-                    <div class="post-card">
-                        <h5 class="mt-2">{{.User.Username}}</h5>
-                        <p>{{.CreatedAt | formatDate }}</p>
-                        <small>{{.Description}}</small>
-                        <div>number of likes: {{.NumberOfLikes}}</div>
-                        <div>number of dislikes {{.NumberOfDislikes}}</div>
-                    </div>
-
-                {{end}}
-            </div>
-        </div>
-    </div>
-    {{end}}
-
+    
 
     </div>
 
