@@ -590,3 +590,63 @@ func DeletePost(w http.ResponseWriter, r *http.Request) {
 
 	userManagementControllers.RedirectToHome(w, r)
 }
+
+func LikePost(w http.ResponseWriter, r *http.Request) {
+	// if r.Method != http.MethodPut {
+	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
+	// 	return
+	// }
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(r)
+	if checkLoginError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	if loginStatus {
+		fmt.Println("logged in userid is: ", loginUser.ID)
+		// return
+	} else {
+		fmt.Println("user is not logged in")
+	}
+
+	err := r.ParseForm()
+	if err != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
+		return
+	}
+	postID := r.FormValue("post_id")
+	postIDInt, _ := strconv.Atoi(postID)
+	liked, checkError := models.PostHasLiked(loginUser.ID, postIDInt)
+	if checkError != nil {
+		fmt.Println(checkError)
+		fmt.Println("mahdi injast")
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+
+	if liked {
+		var Type string
+		like := r.FormValue("like_post")
+		dislike := r.FormValue("dislike_post")
+		if like == "like" {
+			Type = like
+		} else if dislike == "dislike" {
+			Type = dislike
+		}
+		post := &models.PostLike{
+			Type:   Type,
+			PostId: postIDInt,
+			UserId: loginUser.ID,
+		}
+		_, insertError := models.InsertPostLike(post)
+		if insertError != nil {
+			fmt.Println(insertError)
+			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+			return
+		}
+		userManagementControllers.RedirectToPrevPage(w, r)
+	} else {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
+		return
+	}
+
+}

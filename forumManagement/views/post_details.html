@@ -66,7 +66,40 @@
                 <p>{{.Post.User.Username}}</p>
             </div>
         </div>
-
+        
+        {{if .LoginUser.ID}}
+        <!-- Comments section for logged in users -->
+        <div class="container p-5">
+            <div class="row">
+                        <form method="post" action="/likePost">
+                            <div class="mb-3">
+                                <input type="hidden" id="post_id" name="post_id" value="{{.Post.ID}}">
+                            </div>
+                            <label>
+                                <input type="radio" name="like_post" value="like"> like
+                              </label><br>
+                              <label>
+                                <input type="radio" name="dislike_post" value="dislike" > dislike
+                              </label><br>
+                              <button class="btn btn-success" type="submit" class="btn btn-success w-100">send</button>
+                        </form>
+                        <div>number of likes: {{.Post.NumberOfLikes}}</div>
+                        <div>number of dislikes {{.Post.NumberOfDislikes}}</div>
+                </div>
+            </div>
+        </div>
+        {{else}}
+        <!-- Comments section for not logged in users -->
+        <div class="container p-5">
+            <div class="row">
+                <div class="col-md-12">
+                        <div class="post-card">
+                        </div>
+                </div>
+            </div>
+        </div>
+        {{end}}
+        
         {{if eq .LoginUser.ID .Post.UserId}}
         <div class="row">
             <div class="col-md-2">

@@ -22,7 +22,7 @@ type PostLike struct {
 	Post      Post                      `json:"post"`
 }
 
-func insertPostLike(postLike *PostLike) (int, error) {
+func InsertPostLike(postLike *PostLike) (int, error) {
 	db := utils.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
@@ -302,4 +302,22 @@ func ReadPostsLikeByPostId(postId int) ([]PostLike, error) {
 	}
 
 	return postLikes, nil
+}
+
+func PostHasLiked(userId int, postID int) (bool, error) {
+	db := utils.OpenDBConnection()
+	defer db.Close() // Close the connection after the function finishes
+	selectQuery := `SELECT *
+		FROM post_likes pl
+		WHERE pl.user_id = ? AND pl.post_id = ?
+	`
+	rows, insertErr := db.Query(selectQuery, userId, postID)
+	if insertErr != nil {
+		// Check if the error is a SQLite constraint violation
+		return false, insertErr
+	}
+	for rows.Next() {
+		return false, nil
+	}
+	return true, nil
 }

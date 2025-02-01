@@ -12,17 +12,21 @@ import (
 
 // Post struct represents the user data model
 type Post struct {
-	ID          int                       `json:"id"`
-	UUID        string                    `json:"uuid"`
-	Title       string                    `json:"title"`
-	Description string                    `json:"description"`
-	UserId      int                       `json:"user_id"`
-	Status      string                    `json:"status"`
-	CreatedAt   time.Time                 `json:"created_at"`
-	UpdatedAt   *time.Time                `json:"updated_at"`
-	UpdatedBy   *int                      `json:"updated_by"`
-	User        userManagementModels.User `json:"user"`       // Embedded user data
-	Categories  []Category                `json:"categories"` // List of categories related to the post
+	ID               int                       `json:"id"`
+	UUID             string                    `json:"uuid"`
+	Title            string                    `json:"title"`
+	Description      string                    `json:"description"`
+	UserId           int                       `json:"user_id"`
+	Status           string                    `json:"status"`
+	CreatedAt        time.Time                 `json:"created_at"`
+	UpdatedAt        *time.Time                `json:"updated_at"`
+	UpdatedBy        *int                      `json:"updated_by"`
+	IsLikedByUser    bool                      `json:"liked"`
+	IsDislikedByUser bool                      `json:"disliked"`
+	NumberOfLikes    int                       `json:"number_of_likes"`
+	NumberOfDislikes int                       `json:"number_of_dislikes"`
+	User             userManagementModels.User `json:"user"`       // Embedded user data
+	Categories       []Category                `json:"categories"` // List of categories related to the post
 }
 
 func InsertPost(post *Post, categoryIds []int) (int, error) {
@@ -472,7 +476,8 @@ func ReadPostByUUID(postUUID string) (Post, error) {
 	rows, selectError := db.Query(`
         SELECT p.id as post_id, p.uuid as post_uuid, p.title as post_title, p.description as post_description, p.status as post_status, p.created_at as post_created_at, p.updated_at as post_updated_at, p.updated_by as post_updated_by,
 			u.id as user_id, u.name as user_name, u.username as user_username, u.email as user_email,
-			c.id as category_id, c.name as category_name
+			c.id as category_id, c.name as category_name,
+			COALESCE(pl.type, '')
 		FROM posts p
 			INNER JOIN users u
 				ON p.user_id = u.id
@@ -483,6 +488,8 @@ func ReadPostByUUID(postUUID string) (Post, error) {
 			LEFT JOIN categories c
 				ON pc.category_id = c.id
 				AND c.status = 'enable'
+			LEFT JOIN post_likes pl
+				ON p.id = pl.post_id AND pl.status != 'delete'	
 		WHERE p.status != 'delete'
 			AND u.status != 'delete';
     `, postUUID)
@@ -498,17 +505,21 @@ func ReadPostByUUID(postUUID string) (Post, error) {
 	// Scan the records
 	for rows.Next() {
 		var category Category
-
+		var Type string
 		err := rows.Scan(
 			&post.ID, &post.UUID, &post.Title, &post.Description, &post.Status,
 			&post.CreatedAt, &post.UpdatedAt, &post.UpdatedBy, &post.UserId,
 			&user.Name, &user.Username, &user.Email,
-			&category.ID, &category.Name,
+			&category.ID, &category.Name, &Type,
 		)
 		if err != nil {
 			return Post{}, fmt.Errorf("error scanning row: %v", err)
 		}
-
+		if Type == "like" {
+			post.NumberOfLikes++
+		} else if Type == "dislike" {
+			post.NumberOfDislikes++
+		}
 		// Append category to post categories list
 		categories = append(categories, category)
 	}
@@ -516,6 +527,80 @@ func ReadPostByUUID(postUUID string) (Post, error) {
 	// If no rows were returned, the post doesn't exist
 	if post.ID == 0 {
 		return Post{}, fmt.Errorf("post with UUID %s not found", postUUID)
+	}
+
+	// Assign categories to the post
+	post.Categories = categories
+	post.User = user
+
+	// Check for any errors during row iteration
+	if err := rows.Err(); err != nil {
+		return Post{}, fmt.Errorf("row iteration error: %v", err)
+	}
+
+	return post, nil
+}
+
+func ReadPostByUserID(postId int, userID int) (Post, error) {
+	db := utils.OpenDBConnection()
+	defer db.Close() // Close the connection after the function finishes
+	// Updated query to join comments with posts
+	rows, selectError := db.Query(`
+        SELECT p.id as post_id, p.uuid as post_uuid, p.title as post_title, p.description as post_description, p.status as post_status, p.created_at as post_created_at, p.updated_at as post_updated_at, p.updated_by as post_updated_by,
+			p.user_id as post_user_id, u.id as user_id, u.name as user_name, u.username as user_username, u.email as user_email,
+			c.id as category_id, c.name as category_name,
+			COALESCE(pl.type, '')
+		FROM posts p
+			INNER JOIN users u
+				ON p.user_id = u.id
+				AND p.id = ?
+			LEFT JOIN post_categories pc
+				ON p.id = pc.post_id
+				AND pc.status = 'enable'
+			LEFT JOIN categories c
+				ON pc.category_id = c.id
+				AND c.status = 'enable'
+			LEFT JOIN post_likes pl
+				ON p.id = pl.post_id AND pl.status != 'delete'	
+		WHERE p.status != 'delete'
+			AND u.status != 'delete';
+    `, postId)
+	if selectError != nil {
+		return Post{}, selectError
+	}
+	defer rows.Close()
+
+	var post Post
+	var user userManagementModels.User
+	var categories []Category
+
+	// Scan the records
+	for rows.Next() {
+		var category Category
+		var Type string
+		err := rows.Scan(
+			&post.ID, &post.UUID, &post.Title, &post.Description, &post.Status,
+			&post.CreatedAt, &post.UpdatedAt, &post.UpdatedBy, &post.UserId,
+			&user.ID, &user.Name, &user.Username, &user.Email,
+			&category.ID, &category.Name, &Type,
+		)
+		if err != nil {
+			return Post{}, fmt.Errorf("error scanning row: %v", err)
+		}
+		if user.ID == userID {
+			if Type == "like" {
+				post.IsLikedByUser = true
+			} else if Type == "dislike" {
+				post.IsDislikedByUser = true
+			}
+		}
+		if Type == "like" {
+			post.NumberOfLikes++
+		} else if Type == "dislike" {
+			post.NumberOfDislikes++
+		}
+		// Append category to post categories list
+		categories = append(categories, category)
 	}
 
 	// Assign categories to the post
