@@ -19,7 +19,7 @@
         
         <div class="categories mb-3">
             {{range .Categories}}
-            <button class="btn btn-outline-secondary">{{.Name}}</button>
+            <a class="btn btn-outline-secondary" href="/posts/{{.Name}}">{{.Name}}</a>
             {{end}}
         </div>
         
