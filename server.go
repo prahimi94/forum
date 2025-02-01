@@ -14,7 +14,7 @@ func main() {
 
 	// Register route handlers
 	http.HandleFunc("/", forumManagementControllers.MainPageHandler)
-	http.HandleFunc("/home/", forumManagementControllers.HomePageHandler)
+	// http.HandleFunc("/home/", forumManagementControllers.HomePageHandler)
 	http.HandleFunc("/auth/", userManagementControllers.AuthHandler)
 	http.HandleFunc("/logout/", userManagementControllers.Logout)
 	http.HandleFunc("/register", userManagementControllers.RegisterHandler) /*post method*/

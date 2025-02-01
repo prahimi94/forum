@@ -79,7 +79,7 @@ func ReadMyCreatedPosts(w http.ResponseWriter, r *http.Request) {
 	if loginStatus {
 		fmt.Println("logged in userid is: ", loginUser.ID)
 	} else {
-		fmt.Println("user is not logged in")
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
 	}
 
@@ -148,7 +148,7 @@ func ReadMyLikedPosts(w http.ResponseWriter, r *http.Request) {
 	if loginStatus {
 		fmt.Println("logged in userid is: ", loginUser.ID)
 	} else {
-		fmt.Println("user is not logged in")
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
 	}
 
@@ -292,7 +292,8 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("logged in userid is: ", loginUser.ID)
 		// return
 	} else {
-		fmt.Println("user is not logged in")
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
+		return
 	}
 
 	categories, err := models.ReadAllCategories()
@@ -342,7 +343,8 @@ func SubmitPost(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("logged in userid is: ", loginUser.ID)
 		// return
 	} else {
-		fmt.Println("user is not logged in")
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
+		return
 	}
 
 	err := r.ParseForm()
@@ -409,7 +411,8 @@ func EditPost(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("logged in userid is: ", loginUser.ID)
 		// return
 	} else {
-		fmt.Println("user is not logged in")
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
+		return
 	}
 
 	uuid, errUrl := utils.ExtractUUIDFromUrl(r.URL.Path, "editPost")
@@ -473,7 +476,8 @@ func UpdatePost(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("logged in userid is: ", loginUser.ID)
 		// return
 	} else {
-		fmt.Println("user is not logged in")
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
+		return
 	}
 
 	err := r.ParseForm()
@@ -551,7 +555,8 @@ func DeletePost(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("logged in userid is: ", loginUser.ID)
 		// return
 	} else {
-		fmt.Println("user is not logged in")
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
+		return
 	}
 
 	err := r.ParseForm()
@@ -588,5 +593,5 @@ func DeletePost(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Post delete successfully!")
 	}
 
-	userManagementControllers.RedirectToHome(w, r)
+	userManagementControllers.RedirectToIndex(w, r)
 }

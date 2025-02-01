@@ -20,6 +20,12 @@ var PredefinedErrors = map[string]ErrorPageData{
 		CodeNumber: http.StatusBadRequest,
 		Info:       "Bad request",
 	},
+	"UnauthorizedError": {
+		Name:       "UnauthorizedError",
+		Code:       strconv.Itoa(http.StatusUnauthorized),
+		CodeNumber: http.StatusUnauthorized,
+		Info:       "Unauthorized",
+	},
 	"NotFoundError": {
 		Name:       "NotFoundError",
 		Code:       strconv.Itoa(http.StatusNotFound),
@@ -44,6 +50,7 @@ var publicUrl = "errorManagement/views/"
 
 var (
 	BadRequestError       = PredefinedErrors["BadRequestError"]
+	UnauthorizedError     = PredefinedErrors["UnauthorizedError"]
 	NotFoundError         = PredefinedErrors["NotFoundError"]
 	MethodNotAllowedError = PredefinedErrors["MethodNotAllowedError"]
 	InternalServerError   = PredefinedErrors["InternalServerError"]

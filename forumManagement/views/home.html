@@ -1,8 +1,17 @@
 {{template "header"}}
 <body>
     
+    {{if .LoginUser }}
+
     {{template "navbar" .LoginUser}}
     
+    {{else}}
+
+    {{template "navbar"}}
+    
+    {{template "hero"}}
+
+    {{end}}
     
     <div class="container mt-5">
         <h3>Recent Posts</h3>

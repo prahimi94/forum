@@ -1,10 +1,17 @@
 {{template "header"}}
 <body>
+    
+    {{if .LoginUser.ID }}
+
+    {{template "navbar" .LoginUser}}
+    
+    {{else}}
+
     {{template "navbar"}}
     
     {{template "hero"}}
 
-
+    {{end}}
     
     <div class="container mt-5">
         <h3>Recent Posts</h3>
@@ -16,9 +23,9 @@
             {{end}}
         </div>
         
+        
         {{template "posts" .Posts}}
     </div>
-    
     
     {{template "footer"}}
 </body>
