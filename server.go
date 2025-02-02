@@ -33,7 +33,7 @@ func main() {
 	http.HandleFunc("/updatePost", forumManagementControllers.UpdatePost) /*post method*/
 	http.HandleFunc("/deletePost", forumManagementControllers.DeletePost) /*post method*/
 
-	http.HandleFunc("/updateComment", forumManagementControllers.UpdatePost)    /*post method*/
+	http.HandleFunc("/updateComment", forumManagementControllers.UpdateComment) /*post method*/
 	http.HandleFunc("/deleteComment", forumManagementControllers.DeleteComment) /*post method*/
 
 	// forumManagement.InsertPost("first post", "first post description", []int{1, 2}, 1)

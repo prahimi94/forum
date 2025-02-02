@@ -552,9 +552,10 @@ func ReadPostByUUID(postUUID string) (Post, error) {
 	// Query the records
 	rows, selectError := db.Query(`
         SELECT p.id as post_id, p.uuid as post_uuid, p.title as post_title, p.description as post_description, p.status as post_status, p.created_at as post_created_at, p.updated_at as post_updated_at, p.updated_by as post_updated_by,
+			(SELECT COUNT(DISTINCT id) from post_likes WHERE post_id = p.id AND status != 'delete' AND type = 'like') AS number_of_likes,
+			(SELECT COUNT(DISTINCT id) from post_likes WHERE post_id = p.id AND status != 'delete' AND type = 'dislike') AS number_of_dislikes,
 			u.id as user_id, u.name as user_name, u.username as user_username, u.email as user_email,
-			c.id as category_id, c.name as category_name,
-			COALESCE(pl.type, '')
+			c.id as category_id, c.name as category_name
 		FROM posts p
 			INNER JOIN users u
 				ON p.user_id = u.id
@@ -565,8 +566,6 @@ func ReadPostByUUID(postUUID string) (Post, error) {
 			LEFT JOIN categories c
 				ON pc.category_id = c.id
 				AND c.status = 'enable'
-			LEFT JOIN post_likes pl
-				ON p.id = pl.post_id AND pl.status != 'delete'	
 		WHERE p.status != 'delete'
 			AND u.status != 'delete';
     `, postUUID)
@@ -582,21 +581,18 @@ func ReadPostByUUID(postUUID string) (Post, error) {
 	// Scan the records
 	for rows.Next() {
 		var category Category
-		var Type string
+
 		err := rows.Scan(
 			&post.ID, &post.UUID, &post.Title, &post.Description, &post.Status,
-			&post.CreatedAt, &post.UpdatedAt, &post.UpdatedBy, &post.UserId,
-			&user.Name, &user.Username, &user.Email,
-			&category.ID, &category.Name, &Type,
+			&post.CreatedAt, &post.UpdatedAt, &post.UpdatedBy,
+			&post.NumberOfLikes, &post.NumberOfDislikes,
+			&post.UserId, &user.Name, &user.Username, &user.Email,
+			&category.ID, &category.Name,
 		)
 		if err != nil {
 			return Post{}, fmt.Errorf("error scanning row: %v", err)
 		}
-		if Type == "like" {
-			post.NumberOfLikes++
-		} else if Type == "dislike" {
-			post.NumberOfDislikes++
-		}
+
 		// Append category to post categories list
 		categories = append(categories, category)
 	}
