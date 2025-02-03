@@ -25,6 +25,7 @@ func main() {
 	http.HandleFunc("/myLikedPosts/", forumManagementControllers.ReadMyLikedPosts)
 	http.HandleFunc("/post/", forumManagementControllers.ReadPost)
 	http.HandleFunc("/posts/", forumManagementControllers.ReadPostsByCategory)
+	http.HandleFunc("/filterPosts/", forumManagementControllers.FilterPosts)
 	http.HandleFunc("/likeComment", forumManagementControllers.LikeComment)
 	http.HandleFunc("/likePost", forumManagementControllers.LikePost)
 

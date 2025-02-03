@@ -107,8 +107,7 @@ func createComment(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("logged in userid is: ", loginUser.ID)
 		// return
 	} else {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
-		return
+		fmt.Println("user is not logged in")
 	}
 
 	// tmpl, err := template.ParseFiles(
@@ -141,8 +140,7 @@ func SubmitComment(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("logged in userid is: ", loginUser.ID)
 		// return
 	} else {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
-		return
+		fmt.Println("user is not logged in")
 	}
 
 	err := r.ParseForm()
@@ -190,8 +188,7 @@ func LikeComment(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("logged in userid is: ", loginUser.ID)
 		// return
 	} else {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
-		return
+		fmt.Println("user is not logged in")
 	}
 	err := r.ParseForm()
 	if err != nil {
@@ -240,8 +237,7 @@ func UpdateComment(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("logged in userid is: ", loginUser.ID)
 		// return
 	} else {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
-		return
+		fmt.Println("user is not logged in")
 	}
 
 	err := r.ParseForm()
@@ -304,8 +300,7 @@ func DeleteComment(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("logged in userid is: ", loginUser.ID)
 		// return
 	} else {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
-		return
+		fmt.Println("user is not logged in")
 	}
 
 	err := r.ParseForm()
@@ -340,7 +335,7 @@ func DeleteComment(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	} else {
-		fmt.Println("Comment delete successfully!")
+		fmt.Println("Post delete successfully!")
 	}
 
 	http.Redirect(w, r, "/post/"+post_uuid, http.StatusFound)

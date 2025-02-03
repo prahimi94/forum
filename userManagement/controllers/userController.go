@@ -1,8 +1,6 @@
 package controller
 
 import (
-	"database/sql"
-	"errors"
 	"fmt"
 	errorManagementControllers "forum/errorManagement/controllers"
 	"forum/userManagement/models"
@@ -18,6 +16,10 @@ import (
 const publicUrl = "userManagement/views/"
 
 var u1 = uuid.Must(uuid.NewV4())
+
+type AuthPageErrorData struct {
+	ErrorMessage string
+}
 
 func AuthHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -75,7 +77,8 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 	if len(username) == 0 || len(email) == 0 || len(password) == 0 {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
+		// errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
+		renderAuthPage(w, "Username, email and password are required.")
 		return
 	}
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -93,9 +96,12 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	// Insert a record while checking duplicates
 	userId, insertError := models.InsertUser(newUser)
 	if insertError != nil {
-		if errors.Is(insertError, sql.ErrNoRows) {
-			// todo show toast
-			fmt.Println("User already exists!")
+		if insertError.Error() == "duplicateEmail" {
+			renderAuthPage(w, "User with this email already exists!")
+			return
+		} else if insertError.Error() == "duplicateUsername" {
+			renderAuthPage(w, "User with this username already exists!")
+			return
 		} else {
 			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		}
@@ -135,14 +141,18 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("username")
 	password := r.FormValue("password")
 	if len(username) == 0 || len(password) == 0 {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
+		// errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
+		// return
+		renderAuthPage(w, "Username and password are required.")
 		return
 	}
 
 	// Insert a record while checking duplicates
 	authStatus, userId, authError := models.AuthenticateUser(username, password)
 	if authError != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		// errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		renderAuthPage(w, authError.Error())
+		return
 	} else if authStatus {
 		fmt.Println("User logged in successfully!")
 	}
@@ -150,6 +160,12 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	sessionGenerator(w, r, userId)
 
 	RedirectToIndex(w, r)
+}
+
+// Render the login page with an optional error message
+func renderAuthPage(w http.ResponseWriter, errorMsg string) {
+	tmpl := template.Must(template.ParseFiles(publicUrl + "authPage.html"))
+	tmpl.Execute(w, AuthPageErrorData{ErrorMessage: errorMsg})
 }
 
 func sessionGenerator(w http.ResponseWriter, r *http.Request, userId int) {

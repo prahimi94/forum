@@ -38,16 +38,29 @@ func InsertUser(user *User) (int, error) {
 		user.UUID = uuid
 	}
 
+	var existingEmail string
+	var existingUsername string
+	emailCheckQuery := `SELECT email, username FROM users WHERE email = ? OR username = ? LIMIT 1;`
+	err := db.QueryRow(emailCheckQuery, user.Email, user.Username).Scan(&existingEmail, &existingUsername)
+	if err == nil {
+		if existingEmail == user.Email {
+			return -1, errors.New("duplicateEmail")
+		}
+		if existingUsername == user.Username {
+			return -1, errors.New("duplicateUsername")
+		}
+	}
+
 	insertQuery := `INSERT INTO users (uuid, name, username, email, password) VALUES (?, ?, ?, ?, ?);`
 	result, insertErr := db.Exec(insertQuery, user.UUID, user.Username, user.Username, user.Email, user.Password)
 	if insertErr != nil {
-		// Check if the error is a SQLite constraint violation
+		// Check if the error is a SQLite constraint violation (duplicate entry)
 		if sqliteErr, ok := insertErr.(interface{ ErrorCode() int }); ok {
-			if sqliteErr.ErrorCode() == 19 { // SQLite constraint violation error code
-				return -1, sql.ErrNoRows // Return custom error to indicate a duplicate
+			if sqliteErr.ErrorCode() == 19 { // 19 = UNIQUE constraint failed (SQLite error code)
+				return -1, errors.New("user with this email or username already exists")
 			}
 		}
-		return -1, insertErr
+		return -1, insertErr // Other DB errors
 	}
 
 	// Retrieve the last inserted ID
