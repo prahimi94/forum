@@ -1,8 +1,6 @@
 package controller
 
 import (
-	"database/sql"
-	"errors"
 	"fmt"
 	errorManagementControllers "forum/errorManagement/controllers"
 	"forum/forumManagement/models"
@@ -271,12 +269,7 @@ func UpdateComment(w http.ResponseWriter, r *http.Request) {
 	// Update a record while checking duplicates
 	updateError := models.UpdateComment(comment, loginUser.ID, description)
 	if updateError != nil {
-		if errors.Is(updateError, sql.ErrNoRows) {
-			// todo show toast
-			fmt.Println("Comment already exists!")
-		} else {
-			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		}
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	} else {
 		fmt.Println("Comment updated successfully!")
@@ -327,12 +320,7 @@ func DeleteComment(w http.ResponseWriter, r *http.Request) {
 	// Update a record while checking duplicates
 	updateError := models.UpdateCommentStatus(comment_id, "delete", loginUser.ID)
 	if updateError != nil {
-		if errors.Is(updateError, sql.ErrNoRows) {
-			// todo show toast
-			fmt.Println("Comment already exists!")
-		} else {
-			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		}
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	} else {
 		fmt.Println("Post delete successfully!")
