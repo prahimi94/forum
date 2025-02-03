@@ -362,7 +362,7 @@ func ReadPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	post, err := models.ReadPostByUUID(uuid)
+	post, err := models.ReadPostByUUID(uuid, loginUser.ID)
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
@@ -562,7 +562,7 @@ func EditPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	post, err := models.ReadPostByUUID(uuid)
+	post, err := models.ReadPostByUUID(uuid, loginUser.ID)
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
@@ -738,10 +738,10 @@ func DeletePost(w http.ResponseWriter, r *http.Request) {
 }
 
 func LikePost(w http.ResponseWriter, r *http.Request) {
-	// if r.Method != http.MethodPut {
-	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
-	// 	return
-	// }
+	if r.Method != http.MethodPost {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
+		return
+	}
 	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
@@ -749,9 +749,9 @@ func LikePost(w http.ResponseWriter, r *http.Request) {
 	}
 	if loginStatus {
 		fmt.Println("logged in userid is: ", loginUser.ID)
-		// return
 	} else {
-		fmt.Println("user is not logged in")
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
+		return
 	}
 
 	err := r.ParseForm()
@@ -761,23 +761,18 @@ func LikePost(w http.ResponseWriter, r *http.Request) {
 	}
 	postID := r.FormValue("post_id")
 	postIDInt, _ := strconv.Atoi(postID)
-	liked, checkError := models.PostHasLiked(loginUser.ID, postIDInt)
-	if checkError != nil {
-		fmt.Println(checkError)
-		fmt.Println("mahdi injast")
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
+	var Type string
+	like := r.FormValue("like_post")
+	dislike := r.FormValue("dislike_post")
+	if like == "like" {
+		Type = like
+	} else if dislike == "dislike" {
+		Type = dislike
 	}
 
-	if liked {
-		var Type string
-		like := r.FormValue("like_post")
-		dislike := r.FormValue("dislike_post")
-		if like == "like" {
-			Type = like
-		} else if dislike == "dislike" {
-			Type = dislike
-		}
+	existingLikeId, existingLikeType := models.PostHasLiked(loginUser.ID, postIDInt)
+
+	if existingLikeId == -1 {
 		post := &models.PostLike{
 			Type:   Type,
 			PostId: postIDInt,
@@ -785,14 +780,21 @@ func LikePost(w http.ResponseWriter, r *http.Request) {
 		}
 		_, insertError := models.InsertPostLike(post)
 		if insertError != nil {
-			fmt.Println(insertError)
 			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 			return
 		}
 		userManagementControllers.RedirectToPrevPage(w, r)
 	} else {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
-		return
+		if existingLikeType == Type { //this is duplicated like or duplicated dislike so we should update it to disable
+			updateError := models.UpdateStatusPostLike(existingLikeId, "delete", loginUser.ID)
+			if updateError != nil {
+				errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+				return
+			}
+			userManagementControllers.RedirectToPrevPage(w, r)
+		} else { //this is like and dislike in the same time
+			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
+			return
+		}
 	}
-
 }

@@ -74,14 +74,27 @@
         <div class="row py-3">
             <form method="post" action="/likePost">
                 <input type="hidden" id="post_id" name="post_id" value="{{.Post.ID}}">
-            
+
+                {{if .Post.IsLikedByUser}}
+                <button type="submit" name="like_post" value="like" class="btn btn-success">
+                    <i class="fa-solid fa-thumbs-up"></i>
+                </button>
+                {{else}}
                 <button type="submit" name="like_post" value="like" class="btn btn-outline-success">
                     <i class="fa-regular fa-thumbs-up"></i>
                 </button>
+                {{end}}
             
+
+                {{if .Post.IsDislikedByUser}}
+                <button type="submit" name="dislike_post" value="dislike" class="btn btn-danger">
+                    <i class="fa-solid fa-thumbs-down"></i>
+                </button>
+                {{else}}
                 <button type="submit" name="dislike_post" value="dislike" class="btn btn-outline-danger">
                     <i class="fa-regular fa-thumbs-down"></i>
                 </button>
+                {{end}}
             </form>
         </div>
         {{end}}

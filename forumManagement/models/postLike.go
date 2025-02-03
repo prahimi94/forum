@@ -58,7 +58,7 @@ func UpdateStatusPostLike(post_like_id int, status string, user_id int) error {
 	db := utils.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
-	updateQuery := `UPDATE postlike
+	updateQuery := `UPDATE post_likes
 		               SET status = ?,
 			           updated_at = CURRENT_TIMESTAMP,
 			           updated_by = ?
@@ -309,20 +309,21 @@ func ReadPostsLikeByPostId(postId int) ([]PostLike, error) {
 	return postLikes, nil
 }
 
-func PostHasLiked(userId int, postID int) (bool, error) {
+func PostHasLiked(userId int, postID int) (int, string) {
 	db := utils.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
-	selectQuery := `SELECT *
+	var existingLikeId int
+	var existingLikeType string
+	likeCheckQuery := `SELECT id, type
 		FROM post_likes pl
 		WHERE pl.user_id = ? AND pl.post_id = ?
+		AND status = 'enable'
 	`
-	rows, insertErr := db.Query(selectQuery, userId, postID)
-	if insertErr != nil {
-		// Check if the error is a SQLite constraint violation
-		return false, insertErr
+	err := db.QueryRow(likeCheckQuery, userId, postID).Scan(&existingLikeId, &existingLikeType)
+
+	if err == nil { //it means that post has like or dislike
+		return existingLikeId, existingLikeType
+	} else {
+		return -1, ""
 	}
-	for rows.Next() {
-		return false, nil
-	}
-	return true, nil
 }
