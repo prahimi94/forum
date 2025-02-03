@@ -188,6 +188,7 @@ func LikeComment(w http.ResponseWriter, r *http.Request) {
 	} else {
 		fmt.Println("user is not logged in")
 	}
+
 	err := r.ParseForm()
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
@@ -195,29 +196,33 @@ func LikeComment(w http.ResponseWriter, r *http.Request) {
 	}
 	commentID := r.FormValue("comment_id")
 	commentIDInt, _ := strconv.Atoi(commentID)
-
-	liked, checkError := models.CommentHasLiked(loginUser.ID, commentIDInt)
-	if checkError != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
+	var Type string
+	like := r.FormValue("like")
+	dislike := r.FormValue("dislike")
+	if like == "like" {
+		Type = like
+	} else if dislike == "dislike" {
+		Type = dislike
 	}
 
-	if liked {
-		var Type string
-		like := r.FormValue("like")
-		dislike := r.FormValue("dislike")
-		if like == "like" {
-			Type = like
-		} else if dislike == "dislike" {
-			Type = dislike
-		}
+	existingLikeId, existingLikeType := models.CommentHasLiked(loginUser.ID, commentIDInt)
+	if existingLikeId == -1 {
 		models.InsertCommentLike(Type, commentIDInt, loginUser.ID)
 		userManagementControllers.RedirectToPrevPage(w, r)
 	} else {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
+		updateError := models.UpdateCommentLikesStatus(existingLikeId, "delete", loginUser.ID)
+		if updateError != nil {
+			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+			return
+		}
+
+		if existingLikeType != Type { //this is duplicated like or duplicated dislike so we should update it to disable
+			models.InsertCommentLike(Type, commentIDInt, loginUser.ID)
+
+		}
+		userManagementControllers.RedirectToPrevPage(w, r)
 		return
 	}
-
 }
 
 func UpdateComment(w http.ResponseWriter, r *http.Request) {

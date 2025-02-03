@@ -785,16 +785,25 @@ func LikePost(w http.ResponseWriter, r *http.Request) {
 		}
 		userManagementControllers.RedirectToPrevPage(w, r)
 	} else {
-		if existingLikeType == Type { //this is duplicated like or duplicated dislike so we should update it to disable
-			updateError := models.UpdateStatusPostLike(existingLikeId, "delete", loginUser.ID)
-			if updateError != nil {
+		updateError := models.UpdateStatusPostLike(existingLikeId, "delete", loginUser.ID)
+		if updateError != nil {
+			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+			return
+		}
+
+		if existingLikeType != Type { //this is duplicated like or duplicated dislike so we should update it to disable
+			post := &models.PostLike{
+				Type:   Type,
+				PostId: postIDInt,
+				UserId: loginUser.ID,
+			}
+			_, insertError := models.InsertPostLike(post)
+			if insertError != nil {
 				errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 				return
 			}
-			userManagementControllers.RedirectToPrevPage(w, r)
-		} else { //this is like and dislike in the same time
-			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
-			return
 		}
+		userManagementControllers.RedirectToPrevPage(w, r)
+		return
 	}
 }

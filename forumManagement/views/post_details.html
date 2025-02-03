@@ -166,16 +166,31 @@
                         <form method="post" action="/likeComment">
                             <input type="hidden" name="comment_id" value="{{.ID}}">
                         
+                            {{if .IsLikedByUser}}
+                            <button type="submit" name="like" value="like" class="btn btn-success">
+                                <i class="fa-solid fa-thumbs-up"></i>
+                            </button>
+                            {{else}}
                             <button type="submit" name="like" value="like" class="btn btn-outline-success">
                                 <i class="fa-regular fa-thumbs-up"></i>
                             </button>
+                            {{end}}
                         
+
+                            {{if .IsDislikedByUser}}
+                            <button type="submit" name="dislike" value="dislike" class="btn btn-danger">
+                                <i class="fa-solid fa-thumbs-down"></i>
+                            </button>
+                            {{else}}
                             <button type="submit" name="dislike" value="dislike" class="btn btn-outline-danger">
                                 <i class="fa-regular fa-thumbs-down"></i>
                             </button>
+                            {{end}}
+
                         </form>
                     </div>
                     {{end}}
+    
 
                     {{if eq .User.ID $loginUserID}}
                     <div class="row">

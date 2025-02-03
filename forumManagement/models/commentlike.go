@@ -50,7 +50,7 @@ func UpdateCommentLike(Type string, commentLike CommentLike) error {
 	return nil
 }
 
-func UpdateCommentLikesStatus(status string, commentLike CommentLike) error {
+func UpdateCommentLikesStatus(commentLikeId int, status string, user_id int) error {
 	db := utils.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
@@ -59,7 +59,7 @@ func UpdateCommentLikesStatus(status string, commentLike CommentLike) error {
 		updated_at = CURRENT_TIMESTAMP,
 		updated_by = ?
 	WHERE id = ?;`
-	_, insertErr := db.Exec(updateQuery, status, commentLike.UserId, commentLike.ID)
+	_, insertErr := db.Exec(updateQuery, status, user_id, commentLikeId)
 	if insertErr != nil {
 		// Check if the error is a SQLite constraint violation
 		return insertErr
@@ -148,20 +148,21 @@ func ReadAllCommentsLikedByUserId(userId int, Type string) ([]Comment, error) {
 
 }
 
-func CommentHasLiked(userId int, commentID int) (bool, error) {
+func CommentHasLiked(userId int, commentID int) (int, string) {
 	db := utils.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
-	selectQuery := `SELECT *
+	var existingLikeId int
+	var existingLikeType string
+	likeCheckQuery := `SELECT id, type
 		FROM comment_likes cl
 		WHERE cl.user_id = ? AND cl.comment_id = ?
+		AND status = 'enable'
 	`
-	rows, insertErr := db.Query(selectQuery, userId, commentID)
-	if insertErr != nil {
-		// Check if the error is a SQLite constraint violation
-		return false, insertErr
+	err := db.QueryRow(likeCheckQuery, userId, commentID).Scan(&existingLikeId, &existingLikeType)
+
+	if err == nil { //it means that post has like or dislike
+		return existingLikeId, existingLikeType
+	} else {
+		return -1, ""
 	}
-	for rows.Next() {
-		return false, nil
-	}
-	return true, nil
 }

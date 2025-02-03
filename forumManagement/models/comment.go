@@ -331,15 +331,22 @@ func ReadAllCommentsForPostByUserID(postId int, userID int) ([]Comment, error) {
 			u.status AS user_status, u.created_at AS user_created_at, u.updated_at AS user_updated_at, u.updated_by AS user_updated_by,
 			c.id AS comment_id, c.post_id as comment_post_id ,c.user_id AS comment_user_id, c.description AS comment_description, 
 			c.status AS comment_status, c.created_at AS comment_created_at, c.updated_at AS comment_updated_at, c.updated_by AS comment_updated_by,
-			COALESCE(cl.type, '')
+			(SELECT COUNT(DISTINCT id) from comment_likes WHERE comment_id = c.id AND status != 'delete' AND type = 'like') AS number_of_likes,
+			(SELECT COUNT(DISTINCT id) from comment_likes WHERE comment_id = c.id AND status != 'delete' AND type = 'dislike') AS number_of_dislikes,
+			CASE 
+                WHEN EXISTS (SELECT 1 FROM comment_likes WHERE comment_id = c.id AND status != 'delete' AND type = 'like' AND user_id = ?) THEN 1
+                ELSE 0
+            END AS is_liked_by_user,
+            CASE 
+                WHEN EXISTS (SELECT 1 FROM comment_likes WHERE comment_id = c.id AND status != 'delete' AND type = 'dislike' AND user_id = ?) THEN 1
+                ELSE 0
+            END AS is_disliked_by_user
 		FROM comments c
 			INNER JOIN users u
-				ON c.user_id = u.id AND c.status != 'delete' AND u.status != 'delete' AND c.post_id = ?
-			LEFT JOIN comment_likes cl
-				ON c.id = cl.comment_id AND cl.status != 'delete'
-				ORDER BY c.id desc;
+				ON c.user_id = u.id AND c.status != 'delete' AND u.status != 'delete' AND c.post_id = ?	
+		ORDER BY c.id desc;
 	`
-	rows, selectError := db.Query(selectQuery, postId) // Query the database
+	rows, selectError := db.Query(selectQuery, userID, userID, postId) // Query the database
 	if selectError != nil {
 		return nil, selectError
 	}
@@ -348,7 +355,7 @@ func ReadAllCommentsForPostByUserID(postId int, userID int) ([]Comment, error) {
 	for rows.Next() {
 		var comment Comment
 		var user userManagementModels.User
-		var Type string
+
 		err := rows.Scan(
 			// Map post fields
 			&user.ID,
@@ -372,40 +379,16 @@ func ReadAllCommentsForPostByUserID(postId int, userID int) ([]Comment, error) {
 			&comment.UpdatedAt,
 			&comment.UpdatedBy,
 
-			&Type,
+			&comment.NumberOfLikes, &comment.NumberOfDislikes,
+			&comment.IsLikedByUser, &comment.IsDislikedByUser,
 		)
 		comment.User = user
 		if err != nil {
 			return nil, err
 		}
 
-		if existingComment, found := commentMap[comment.ID]; found {
-			if user.ID == userID {
-				if Type == "like" {
-					existingComment.IsLikedByUser = true
-				} else if Type == "dislike" {
-					existingComment.IsDislikedByUser = true
-				}
-			}
-			if Type == "like" {
-				existingComment.NumberOfLikes++
-			} else if Type == "dislike" {
-				existingComment.NumberOfDislikes++
-			}
-		} else {
-			if user.ID == userID {
-				if Type == "like" {
-					comment.IsLikedByUser = true
-				} else if Type == "dislike" {
-					comment.IsDislikedByUser = true
-				}
-			}
-			if Type == "like" {
-				comment.NumberOfLikes++
-			} else if Type == "dislike" {
-				comment.NumberOfDislikes++
-			}
-
+		_, found := commentMap[comment.ID]
+		if !found {
 			commentMap[comment.ID] = &comment
 		}
 
