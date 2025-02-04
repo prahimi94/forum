@@ -39,6 +39,9 @@ COPY --from=builder /app/forum .
 COPY --from=builder /app/db ./db
 COPY --from=builder /app/modules ./modules
 
+# Install SQLite and required libraries for the database
+RUN apk add --no-cache sqlite sqlite-libs
+
 # Expose the port your application runs on
 EXPOSE 8080
 
