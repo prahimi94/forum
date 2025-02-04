@@ -4,3 +4,4 @@ forum
 # Ignore temporary files or directories
 .DS_Store
 .git
+.gitignore
