@@ -77,13 +77,13 @@ func ReadPostsByCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, errCategory := models.ReadCategoryByName(categoryName)
+	filteredCategory, errCategory := models.ReadCategoryByName(categoryName)
 	if errCategory != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.NotFoundError)
 		return
 	}
 
-	posts, err := models.ReadPostsByCategoryName(categoryName)
+	posts, err := models.ReadPostsByCategoryId(filteredCategory.ID)
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return

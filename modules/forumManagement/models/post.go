@@ -248,7 +248,7 @@ func ReadAllPosts() ([]Post, error) {
 	return posts, nil
 }
 
-func ReadPostsByCategoryName(category_name string) ([]Post, error) {
+func ReadPostsByCategoryId(category_id int) ([]Post, error) {
 	db := utils.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
@@ -260,17 +260,20 @@ func ReadPostsByCategoryName(category_name string) ([]Post, error) {
 		FROM posts p
 			INNER JOIN users u
 				ON p.user_id = u.id
+			INNER JOIN post_categories filterd_pc
+				ON p.id = filterd_pc.post_id
+				AND filterd_pc.status = 'enable'
+				AND filterd_pc.category_id = ?
 			INNER JOIN post_categories pc
 				ON p.id = pc.post_id
 				AND pc.status = 'enable'
 			INNER JOIN categories c
 				ON pc.category_id = c.id
 				AND c.status = 'enable'
-				AND c.name = ?
 		WHERE p.status != 'delete'
 			AND u.status != 'delete'
 		ORDER BY p.id desc;
-    `, category_name)
+    `, category_id)
 	if selectError != nil {
 		return nil, selectError
 	}
