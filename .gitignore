@@ -3,4 +3,5 @@
 *.tar
 *.img
 *.db
+*.db-*
 docker-compose.override.yml

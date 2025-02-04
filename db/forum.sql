@@ -5,8 +5,8 @@ DROP TABLE IF EXISTS "comments";
 DROP TABLE IF EXISTS "post_categories";
 DROP TABLE IF EXISTS "posts";
 DROP TABLE IF EXISTS "categories";
-DROP TABLE IF EXISTS "users";
 DROP TABLE IF EXISTS  "sessions";
+DROP TABLE IF EXISTS "users";
 
 CREATE TABLE "categories" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -22,7 +22,7 @@ CREATE TABLE "categories" (
 CREATE TABLE "users" (
   "id" INTEGER PRIMARY KEY,
   "uuid" TEXT NOT NULL UNIQUE,
-  "type" TEXT NOT NULL CHECK ("type" IN ('admin', 'normal_user')) DEFAULT 'normal_user',
+  "type" TEXT NOT NULL CHECK ("type" IN ('admin', 'normal_user', 'test_user')) DEFAULT 'normal_user',
   "name" TEXT,
   "username" TEXT UNIQUE,
   "email" TEXT UNIQUE,

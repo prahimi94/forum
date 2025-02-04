@@ -515,7 +515,7 @@ func SubmitPost(w http.ResponseWriter, r *http.Request) {
 			categoryIds = append(categoryIds, id)
 		} else {
 			// Handle error if conversion fails (for example, invalid input)
-			http.Error(w, "Invalid category ID", http.StatusBadRequest)
+			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 			return
 		}
 	}
