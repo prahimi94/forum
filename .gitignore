@@ -1,1 +1,5 @@
 .DS_Store
+# Ignoring Docker related files
+*.tar
+*.img
+docker-compose.override.yml

@@ -1,0 +1,17 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8082:8080"
+    image: my-forum-app:latest
+    container_name: my-forum-app-container
+    volumes:
+      - ./db:/root/db
+      - ./modules:/root/modules
+    depends_on:
+      - db
+
+  db:
+    image: nouchka/sqlite3
+    volumes:
+      - ./db:/db
