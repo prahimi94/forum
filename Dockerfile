@@ -38,6 +38,8 @@ WORKDIR /root/
 COPY --from=builder /app/forum .
 COPY --from=builder /app/db ./db
 COPY --from=builder /app/modules ./modules
+COPY --from=builder /app/assets ./assets
+COPY --from=builder /app/utils ./utils
 
 # Install SQLite and required libraries for the database
 RUN apk add --no-cache sqlite sqlite-libs

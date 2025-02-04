@@ -8,3 +8,5 @@ services:
     volumes:
       - ./db:/root/db
       - ./modules:/root/modules
+      - ./assets:/root/assets
+      - ./utils:/root/utils
