@@ -114,7 +114,16 @@ CREATE TABLE "sessions" (
 );
 
 INSERT INTO users(uuid, type,name,username,password, email)
-VALUES('67921bdd-8458-800e-b9d4-065a43242cd3', 'admin', 'admin', 'admin', '$2a$10$DN.v/NkfQjmPaTTz15x0E.u8l2R9.HnB12DpDVMdRPeQZDfMwovSa', 'admin@admin');
+VALUES ('67921bdd-8458-800e-b9d4-065a43242cd3', 'admin', 'admin', 'admin', '$2a$10$DN.v/NkfQjmPaTTz15x0E.u8l2R9.HnB12DpDVMdRPeQZDfMwovSa', 'admin@admin');
 
 INSERT INTO categories (name, created_by)
 VALUES ('art', 1), ('science', 1), ('news', 1);
+
+INSERT INTO posts(uuid, title, description, user_id)
+VALUES ('f9edb8d6-c739-4d6f-aaa4-9b298f2e1552', 'first post', 'this is first post of forum that is made by admin', 1);
+
+INSERT INTO post_categories(post_id, category_id, created_by)
+VALUES (1, 1, 1), (1, 2, 1);
+
+INSERT INTO comments(post_id, description, user_id)
+VALUES (1, 'this is first post comment that is made by admin', 1);

@@ -10,6 +10,7 @@ type ErrorPageData struct {
 	Name       string
 	Code       string
 	CodeNumber int
+	CodeSlice  []string
 	Info       string
 }
 
@@ -18,32 +19,45 @@ var PredefinedErrors = map[string]ErrorPageData{
 		Name:       "BadRequestError",
 		Code:       strconv.Itoa(http.StatusBadRequest),
 		CodeNumber: http.StatusBadRequest,
+		CodeSlice:  splitString(strconv.Itoa(http.StatusBadRequest)),
 		Info:       "Bad request",
 	},
 	"UnauthorizedError": {
 		Name:       "UnauthorizedError",
 		Code:       strconv.Itoa(http.StatusUnauthorized),
 		CodeNumber: http.StatusUnauthorized,
+		CodeSlice:  splitString(strconv.Itoa(http.StatusUnauthorized)),
 		Info:       "Unauthorized",
 	},
 	"NotFoundError": {
 		Name:       "NotFoundError",
 		Code:       strconv.Itoa(http.StatusNotFound),
 		CodeNumber: http.StatusNotFound,
+		CodeSlice:  splitString(strconv.Itoa(http.StatusNotFound)),
 		Info:       "Page not found",
 	},
 	"MethodNotAllowedError": {
 		Name:       "MethodNotAllowedError",
 		Code:       strconv.Itoa(http.StatusMethodNotAllowed),
 		CodeNumber: http.StatusMethodNotAllowed,
+		CodeSlice:  splitString(strconv.Itoa(http.StatusMethodNotAllowed)),
 		Info:       "Method not allowed",
 	},
 	"InternalServerError": {
 		Name:       "InternalServerError",
 		Code:       strconv.Itoa(http.StatusInternalServerError),
 		CodeNumber: http.StatusInternalServerError,
+		CodeSlice:  splitString(strconv.Itoa(http.StatusInternalServerError)),
 		Info:       "Internal server error",
 	},
+}
+
+func splitString(s string) []string {
+	result := make([]string, len(s))
+	for i, r := range s {
+		result[i] = string(r)
+	}
+	return result
 }
 
 var publicUrl = "modules/errorManagement/views/"

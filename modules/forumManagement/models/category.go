@@ -3,8 +3,8 @@ package models
 import (
 	"database/sql"
 	"fmt"
+	"forum/db"
 	userManagementModels "forum/modules/userManagement/models"
-	"forum/utils"
 	"log"
 	"time"
 )
@@ -22,7 +22,7 @@ type Category struct {
 }
 
 func InsertCategory(category *Category) (int, error) {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	insertQuery := `INSERT INTO categories (name) VALUES (?);`
@@ -48,7 +48,7 @@ func InsertCategory(category *Category) (int, error) {
 }
 
 func UpdateCategory(category *Category, userId int) error {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	updateQuery := `UPDATE categories
@@ -71,7 +71,7 @@ func UpdateCategory(category *Category, userId int) error {
 }
 
 func UpdateStatuCategory(categoryId int, status string, userId int) error {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	updateQuery := `UPDATE categories
@@ -94,7 +94,7 @@ func UpdateStatuCategory(categoryId int, status string, userId int) error {
 }
 
 func ReadAllCategories() ([]Category, error) {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	// Query the records
@@ -144,7 +144,7 @@ func ReadAllCategories() ([]Category, error) {
 }
 
 func ReadCategoryById(categoryId int) (Category, error) {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	// Query the records
@@ -194,7 +194,7 @@ func ReadCategoryById(categoryId int) (Category, error) {
 }
 
 func ReadCategoryByName(categoryName string) (Category, error) {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	// Query the records

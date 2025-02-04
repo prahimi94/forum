@@ -1,8 +1,8 @@
 package models
 
 import (
+	"forum/db"
 	userManagementModels "forum/modules/userManagement/models"
-	"forum/utils"
 	"time"
 )
 
@@ -21,7 +21,7 @@ type CommentLike struct {
 }
 
 func InsertCommentLike(Type string, commentId int, userId int) error {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	insertQuery := `INSERT INTO comment_likes (type, user_id, comment_id) VALUES (?, ?, ?);`
@@ -34,7 +34,7 @@ func InsertCommentLike(Type string, commentId int, userId int) error {
 }
 
 func UpdateCommentLike(Type string, commentLike CommentLike) error {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	updateQuery := `UPDATE comment_likes
@@ -51,7 +51,7 @@ func UpdateCommentLike(Type string, commentLike CommentLike) error {
 }
 
 func UpdateCommentLikesStatus(commentLikeId int, status string, user_id int) error {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	updateQuery := `UPDATE comment_likes
@@ -68,7 +68,7 @@ func UpdateCommentLikesStatus(commentLikeId int, status string, user_id int) err
 }
 
 func ReadAllCommentsLikedByUserId(userId int, Type string) ([]Comment, error) {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	selectQuery := `SELECT 
@@ -149,7 +149,7 @@ func ReadAllCommentsLikedByUserId(userId int, Type string) ([]Comment, error) {
 }
 
 func CommentHasLiked(userId int, commentID int) (int, string) {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 	var existingLikeId int
 	var existingLikeType string

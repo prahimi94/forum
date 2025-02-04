@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"fmt"
+	"forum/db"
 	userManagementModels "forum/modules/userManagement/models"
 	"forum/utils"
 	"log"
@@ -30,7 +31,7 @@ type Post struct {
 }
 
 func InsertPost(post *Post, categoryIds []int) (int, error) {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	// Start a transaction for atomicity
@@ -82,7 +83,7 @@ func InsertPost(post *Post, categoryIds []int) (int, error) {
 }
 
 func UpdatePost(post *Post, categories []int, user_id int) error {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	// Start a transaction for atomicity
@@ -131,7 +132,7 @@ func UpdatePost(post *Post, categories []int, user_id int) error {
 }
 
 func UpdateStatusPost(post_id int, status string, user_id int) error {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	// Start a transaction for atomicity
@@ -173,7 +174,7 @@ func UpdateStatusPost(post_id int, status string, user_id int) error {
 }
 
 func ReadAllPosts() ([]Post, error) {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	// Query the records
@@ -249,7 +250,7 @@ func ReadAllPosts() ([]Post, error) {
 }
 
 func ReadPostsByCategoryId(category_id int) ([]Post, error) {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	// Query the records
@@ -329,7 +330,7 @@ func ReadPostsByCategoryId(category_id int) ([]Post, error) {
 }
 
 func FilterPosts(searchTerm string) ([]Post, error) {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	searchPattern := "%" + searchTerm + "%" // Add wildcards for LIKE comparison
@@ -408,7 +409,7 @@ func FilterPosts(searchTerm string) ([]Post, error) {
 }
 
 func ReadPostsByUserId(userId int) ([]Post, error) {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	// Query the records
@@ -485,7 +486,7 @@ func ReadPostsByUserId(userId int) ([]Post, error) {
 }
 
 func ReadPostsLikedByUserId(userId int) ([]Post, error) {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	// Query the records
@@ -567,7 +568,7 @@ func ReadPostsLikedByUserId(userId int) ([]Post, error) {
 }
 
 func ReadPostById(postId int, checkLikeForUser int) (Post, error) {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	// Query the records
@@ -649,7 +650,7 @@ func ReadPostById(postId int, checkLikeForUser int) (Post, error) {
 }
 
 func ReadPostByUUID(postUUID string, checkLikeForUser int) (Post, error) {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	// Query the records
@@ -727,7 +728,7 @@ func ReadPostByUUID(postUUID string, checkLikeForUser int) (Post, error) {
 }
 
 func ReadPostByUserID(postId int, userID int) (Post, error) {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 	// Updated query to join comments with posts
 	rows, selectError := db.Query(`

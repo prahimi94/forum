@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"errors"
+	"forum/db"
 	"forum/utils"
 	"log"
 	"time"
@@ -26,7 +27,7 @@ type User struct {
 }
 
 func InsertUser(user *User) (int, error) {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	// Generate UUID for the user if not already set
@@ -75,7 +76,7 @@ func InsertUser(user *User) (int, error) {
 
 func AuthenticateUser(username, password string) (bool, int, error) {
 	// Open SQLite database
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	// Query to retrieve the hashed password stored in the database for the given username

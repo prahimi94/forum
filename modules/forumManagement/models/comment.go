@@ -1,8 +1,8 @@
 package models
 
 import (
+	"forum/db"
 	userManagementModels "forum/modules/userManagement/models"
-	"forum/utils"
 	"log"
 	"time"
 )
@@ -25,7 +25,7 @@ type Comment struct {
 }
 
 func InsertComment(postId int, userId int, description string) (int, error) {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	insertQuery := `INSERT INTO comments (post_id, description, user_id) VALUES (?, ?, ?);`
@@ -44,7 +44,7 @@ func InsertComment(postId int, userId int, description string) (int, error) {
 }
 
 func UpdateComment(comment *Comment, user_id int, newDescription string) error {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	// Start a transaction for atomicity
@@ -62,7 +62,7 @@ func UpdateComment(comment *Comment, user_id int, newDescription string) error {
 }
 
 func UpdateCommentStatus(id int, status string, user_id int) error {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	updateQuery := `UPDATE comments
@@ -79,7 +79,7 @@ func UpdateCommentStatus(id int, status string, user_id int) error {
 }
 
 func ReadAllComments() ([]Comment, error) {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	var comments []Comment
@@ -158,7 +158,7 @@ func ReadAllComments() ([]Comment, error) {
 }
 
 func ReadCommentsFromUserId(userId int) ([]Comment, error) {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	var comments []Comment
@@ -227,7 +227,7 @@ func ReadCommentsFromUserId(userId int) ([]Comment, error) {
 }
 
 func ReadAllCommentsForPost(postId int) ([]Comment, error) {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	var comments []Comment
@@ -319,7 +319,7 @@ func ReadAllCommentsForPost(postId int) ([]Comment, error) {
 }
 
 func ReadAllCommentsForPostByUserID(postId int, userID int) ([]Comment, error) {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	var comments []Comment
@@ -407,7 +407,7 @@ func ReadAllCommentsForPostByUserID(postId int, userID int) ([]Comment, error) {
 }
 
 // func ReadAllCommentsForPostLikedByUser(postId int, userId int) ([]Comment, error) {
-// 	db := utils.OpenDBConnection()
+// 	db := db.OpenDBConnection()
 // 	defer db.Close() // Close the connection after the function finishes
 //
 // 	var comments []Comment
@@ -482,7 +482,7 @@ func ReadAllCommentsForPostByUserID(postId int, userID int) ([]Comment, error) {
 // }
 
 func ReadAllCommentsOfUserForPost(postId int, userId int) ([]Comment, error) {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	var comments []Comment

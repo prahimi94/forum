@@ -2,4 +2,5 @@
 # Ignoring Docker related files
 *.tar
 *.img
+.db
 docker-compose.override.yml

@@ -3,8 +3,8 @@ package models
 import (
 	"errors"
 	"fmt"
+	"forum/db"
 	userManagementModels "forum/modules/userManagement/models"
-	"forum/utils"
 	"log"
 	"time"
 )
@@ -23,7 +23,7 @@ type PostLike struct {
 }
 
 func InsertPostLike(postLike *PostLike) (int, error) {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	insertQuery := `INSERT INTO post_likes (type, post_id, user_id) VALUES (?, ?, ?);`
@@ -55,7 +55,7 @@ func InsertPostLike(postLike *PostLike) (int, error) {
 
 func UpdateStatusPostLike(post_like_id int, status string, user_id int) error {
 
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	updateQuery := `UPDATE post_likes
@@ -71,7 +71,7 @@ func UpdateStatusPostLike(post_like_id int, status string, user_id int) error {
 }
 
 func ReadAllPostsLikes() ([]PostLike, error) {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	// Query the records
@@ -150,7 +150,7 @@ func ReadAllPostsLikes() ([]PostLike, error) {
 }
 
 func ReadPostsLikeByUserId(userId int) ([]PostLike, error) {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	// Query the records
@@ -230,7 +230,7 @@ func ReadPostsLikeByUserId(userId int) ([]PostLike, error) {
 }
 
 func ReadPostsLikeByPostId(postId int) ([]PostLike, error) {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	// Query the records
@@ -310,7 +310,7 @@ func ReadPostsLikeByPostId(postId int) ([]PostLike, error) {
 }
 
 func PostHasLiked(userId int, postID int) (int, string) {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 	var existingLikeId int
 	var existingLikeType string

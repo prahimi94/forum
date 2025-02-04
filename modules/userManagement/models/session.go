@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"errors"
+	"forum/db"
 	"forum/utils"
 	"log"
 	"time"
@@ -18,7 +19,7 @@ type Session struct {
 }
 
 func InsertSession(session *Session) (*Session, error) {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	// Generate UUID for the user if not already set
@@ -69,7 +70,7 @@ func InsertSession(session *Session) (*Session, error) {
 }
 
 func SelectSession(sessionToken string) (User, time.Time, error) {
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
 	var user User
@@ -92,7 +93,7 @@ func SelectSession(sessionToken string) (User, time.Time, error) {
 
 func DeleteSession(sessionToken string) error {
 
-	db := utils.OpenDBConnection()
+	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 	_, err := db.Exec(`UPDATE sessions
 					SET expires_at = CURRENT_TIMESTAMP

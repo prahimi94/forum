@@ -1,6 +1,7 @@
 package main
 
 import (
+	"forum/db"
 	forumManagementControllers "forum/modules/forumManagement/controllers"
 	userManagementControllers "forum/modules/userManagement/controllers"
 	"log"
@@ -9,6 +10,10 @@ import (
 
 // main initializes the HTTP server, registers routes, and starts listening for incoming requests.
 func main() {
+	if err := db.ExecuteSQLFile("db/forum.sql"); err != nil {
+		log.Fatalf("Error: %v", err)
+	}
+
 	http.Handle("/css/", http.FileServer(http.Dir("assets/")))
 	http.Handle("/js/", http.FileServer(http.Dir("assets/")))
 	http.Handle("/img/", http.FileServer(http.Dir("assets/")))
