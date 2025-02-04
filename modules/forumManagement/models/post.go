@@ -495,8 +495,10 @@ func ReadPostsLikedByUserId(userId int) ([]Post, error) {
 				ON pl.post_id = p.id
 				AND pl.status = 'enable'
 			INNER JOIN users u
-				ON pl.user_id = u.id
-				AND u.id = ?
+				ON p.user_id = u.id
+			INNER JOIN users liked_user
+				ON pl.user_id = liked_user.id
+				AND liked_user.id = ?
 			LEFT JOIN post_categories pc
 				ON p.id = pc.post_id
 				AND pc.status = 'enable'
