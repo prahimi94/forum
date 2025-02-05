@@ -24,7 +24,18 @@
         </div>
 
         <h3>Posts related to "{{.SearchTerm}}"</h3>
-        <input type="text" class="form-control my-3" placeholder="Search">
+        <form class="row g-2 my-3" method="get" action="/filterPosts/">
+
+            <div class="col-11">
+                <input type="text" name="post_info" class="form-control" placeholder="Search">
+            </div>
+            <div class="col-1">
+                <button type="submit" class="btn btn-outline-success">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </div>
+            
+        </form>
         
         <div class="categories mb-3">
             {{range .Categories}}
