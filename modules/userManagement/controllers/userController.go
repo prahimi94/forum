@@ -5,6 +5,7 @@ import (
 	errorManagementControllers "forum/modules/errorManagement/controllers"
 	"forum/modules/userManagement/models"
 	"net/http"
+	"strings"
 	"text/template"
 	"time"
 
@@ -79,6 +80,10 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	if len(username) == 0 || len(email) == 0 || len(password) == 0 {
 		// errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		renderAuthPage(w, "Username, email and password are required.")
+		return
+	}
+	if !strings.Contains(email, "@") {
+		renderAuthPage(w, "Invalid email address!")
 		return
 	}
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
