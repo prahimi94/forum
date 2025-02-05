@@ -4,14 +4,16 @@ FROM golang:1.23-alpine AS builder
 
 LABEL version="1.0" \
         description="Forum Dockerized Application"\
-        author="Parisa Rahimi \ Mahdi Kheirkhah \ Fatemeh Kheirkhah \ Majid Rouhani" \ 
+        author="Parisa Rahimi \ Mahdi Kheirkhah \ Fatemeh Kheirkhah " \ 
         environment="development"
+
+# Install dependencies
+RUN apk add --no-cache gcc musl-dev sqlite sqlite-libs
 
 # Enable CGO and install required libraries
 ENV CGO_ENABLED=1 GOOS=linux GOARCH=amd64
 
-# Install dependencies
-RUN apk add --no-cache gcc musl-dev sqlite sqlite-libs
+
 
 # Set the working directory
 WORKDIR /app
