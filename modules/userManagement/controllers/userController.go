@@ -27,7 +27,7 @@ func AuthHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, user, _, checkLoginError := CheckLogin(r)
+	loginStatus, user, _, checkLoginError := CheckLogin(w, r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
@@ -58,7 +58,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, user, _, checkLoginError := CheckLogin(r)
+	loginStatus, user, _, checkLoginError := CheckLogin(w, r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
@@ -121,7 +121,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, user, _, checkLoginError := CheckLogin(r)
+	loginStatus, user, _, checkLoginError := CheckLogin(w, r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
@@ -183,7 +183,7 @@ func sessionGenerator(w http.ResponseWriter, r *http.Request, userId int) {
 }
 
 // Middleware to check for valid user session in cookie
-func CheckLogin(r *http.Request) (bool, models.User, string, error) {
+func CheckLogin(w http.ResponseWriter, r *http.Request) (bool, models.User, string, error) {
 	cookie, err := r.Cookie("session_token")
 	if err != nil {
 		return false, models.User{}, "", nil
@@ -192,7 +192,12 @@ func CheckLogin(r *http.Request) (bool, models.User, string, error) {
 	sessionToken := cookie.Value
 	user, expirationTime, selectError := models.SelectSession(sessionToken)
 	if selectError != nil {
-		return false, models.User{}, "", selectError
+		if selectError.Error() == "sql: no rows in result set" {
+			deleteCookie(w, "session_token")
+			return false, models.User{}, "", nil
+		} else {
+			return false, models.User{}, "", selectError
+		}
 	}
 
 	// Check if the cookie has expired
@@ -223,7 +228,7 @@ func RedirectToPrevPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func Logout(w http.ResponseWriter, r *http.Request) {
-	loginStatus, _, sessionToken, checkLoginError := CheckLogin(r)
+	loginStatus, _, sessionToken, checkLoginError := CheckLogin(w, r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return

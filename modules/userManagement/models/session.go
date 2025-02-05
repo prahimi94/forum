@@ -83,9 +83,13 @@ func SelectSession(sessionToken string) (User, time.Time, error) {
 								ON s.user_id = u.id
 						WHERE session_token = ?`, sessionToken).Scan(&user.ID, &user.Type, &user.Name, &user.Username, &user.Email, &expirationTime)
 	if err != nil {
-		// Handle other database errors
-		log.Fatal(err)
-		return User{}, time.Time{}, errors.New("database error")
+		if err.Error() == "sql: no rows in result set" {
+			// Handle other database errors
+			return User{}, time.Time{}, errors.New("sql: no rows in result set")
+		} else {
+			// Handle other database errors
+			return User{}, time.Time{}, errors.New("database error")
+		}
 	}
 
 	return user, expirationTime, nil

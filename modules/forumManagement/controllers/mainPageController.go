@@ -49,7 +49,7 @@ func MainPageHandler(w http.ResponseWriter, r *http.Request) {
 		Categories: categories,
 	}
 
-	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(r)
+	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
