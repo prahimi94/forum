@@ -24,7 +24,12 @@ The forum allows:
 
 - The database should include at least one SELECT, one CREATE, and one INSERT query.
 
-- An entity-relationship diagram is recommended for database structuring.
+- Database Entity-Relationship Diagram
+
+    Below is the ERD representing the structure of the forum database:
+
+    ![Forum ERD](db/diagram.png)
+
 
 ### Authentication
 
