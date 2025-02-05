@@ -9,7 +9,7 @@
         <form action="/submitPost" method="post">
             <div class="mb-3">                
                 <div class="mt-3">
-                    <select id="categories" name="categories" class="form-control multiSelect" multiple="multiple" data-placeholder="Select categories">
+                    <select id="categories" name="categories" required class="form-control multiSelect" multiple="multiple" data-placeholder="Select categories">
                         {{range .Categories}}
                         <option value="{{.ID}}">{{.Name}}</option>
                         {{end}}
@@ -17,10 +17,10 @@
                 </div>
             </div>
             <div class="mb-3">
-                <input type="text" class="form-control" placeholder="Title" name="title">
+                <input type="text" class="form-control" placeholder="Title" required name="title">
             </div>
             <div class="mb-3">
-                <textarea class="form-control" placeholder="Description" rows="4" name="description"></textarea>
+                <textarea class="form-control" placeholder="Description" required rows="4" name="description"></textarea>
             </div>
             <!-- <div class="mb-3 text-center border p-3 rounded">
                 <p class="text-muted">Attach an image or video (optional)</p>
