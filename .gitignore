@@ -2,8 +2,8 @@
 # Ignoring Docker related files
 *.tar
 *.img
-*.db
-*.db-*
+# *.db
+# *.db-*
 docker-compose.override.yml
 
 # Ignore everything inside static/uploads/
