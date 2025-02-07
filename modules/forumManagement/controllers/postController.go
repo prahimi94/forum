@@ -37,6 +37,7 @@ func ReadAllPosts(w http.ResponseWriter, r *http.Request) {
 
 	posts, err := models.ReadAllPosts()
 	if err != nil {
+		fmt.Println(err)
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
@@ -488,13 +489,12 @@ func SubmitPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := r.ParseForm()
+	// Parse the multipart form with a max memory of 10MB
+	err := r.ParseMultipartForm(10 << 20) // 10 MB limit
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
 	}
-
-	r.ParseMultipartForm(10 << 20)
 
 	title := r.FormValue("title")
 	description := r.FormValue("description")
@@ -504,23 +504,36 @@ func SubmitPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	file, handler, err := r.FormFile("myFile")
-	if err != nil {
-		fmt.Println("Error Retrieving the File")
-		fmt.Println(err)
+	// Retrieve all uploaded files
+	files := r.MultipartForm.File["postFiles"]
+	if len(files) == 0 {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
 	}
-	defer file.Close()
-	fmt.Printf("Uploaded File: %+v\n", handler.Filename)
-	fmt.Printf("File Size: %+v\n", handler.Size)
-	fmt.Printf("MIME Header: %+v\n", handler.Header)
 
-	fileAddress, err := utils.FileUpload(file, handler)
-	if err != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
+	var uploadedFilesAddresses []string
+
+	for _, handler := range files {
+		file, err := handler.Open()
+		if err != nil {
+			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+			return
+		}
+		defer file.Close()
+
+		fmt.Printf("Uploaded File: %+v\n", handler.Filename)
+		fmt.Printf("File Size: %+v\n", handler.Size)
+		fmt.Printf("MIME Header: %+v\n", handler.Header)
+
+		// Call your file upload function
+		fileAddress, err := utils.FileUpload(file, handler)
+		if err != nil {
+			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+			return
+		}
+
+		uploadedFilesAddresses = append(uploadedFilesAddresses, fileAddress)
 	}
-	fmt.Println(fileAddress)
 
 	post := &models.Post{
 		Title:       title,
@@ -541,7 +554,7 @@ func SubmitPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Insert a record while checking duplicates
-	_, insertError := models.InsertPost(post, categoryIds)
+	_, insertError := models.InsertPost(post, categoryIds, uploadedFilesAddresses)
 	if insertError != nil {
 		if errors.Is(insertError, sql.ErrNoRows) {
 			// todo show toast
@@ -641,9 +654,9 @@ func UpdatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := r.ParseForm()
+	// Parse the multipart form with a max memory of 10MB
+	err := r.ParseMultipartForm(10 << 20) // 10 MB limit
 	if err != nil {
-		fmt.Println(err)
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
 	}
@@ -663,6 +676,37 @@ func UpdatePost(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
+	}
+
+	// Retrieve all uploaded files
+	files := r.MultipartForm.File["postFiles"]
+	if len(files) == 0 {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
+		return
+	}
+
+	var uploadedFilesAddresses []string
+
+	for _, handler := range files {
+		file, err := handler.Open()
+		if err != nil {
+			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+			return
+		}
+		defer file.Close()
+
+		fmt.Printf("Uploaded File: %+v\n", handler.Filename)
+		fmt.Printf("File Size: %+v\n", handler.Size)
+		fmt.Printf("MIME Header: %+v\n", handler.Header)
+
+		// Call your file upload function
+		fileAddress, err := utils.FileUpload(file, handler)
+		if err != nil {
+			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+			return
+		}
+
+		uploadedFilesAddresses = append(uploadedFilesAddresses, fileAddress)
 	}
 
 	post := &models.Post{
@@ -685,7 +729,7 @@ func UpdatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Update a record while checking duplicates
-	updateError := models.UpdatePost(post, categoryIds, loginUser.ID)
+	updateError := models.UpdatePost(post, categoryIds, uploadedFilesAddresses, loginUser.ID)
 	if updateError != nil {
 		if errors.Is(updateError, sql.ErrNoRows) {
 			// todo show toast

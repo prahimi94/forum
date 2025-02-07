@@ -28,9 +28,10 @@ type Post struct {
 	NumberOfDislikes int                       `json:"number_of_dislikes"`
 	User             userManagementModels.User `json:"user"`       // Embedded user data
 	Categories       []Category                `json:"categories"` // List of categories related to the post
+	PostFiles        []PostFile                `json:"post_files"` // List of files related to the post
 }
 
-func InsertPost(post *Post, categoryIds []int) (int, error) {
+func InsertPost(post *Post, categoryIds []int, uploadedFilesAddresses []string) (int, error) {
 	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
@@ -73,6 +74,12 @@ func InsertPost(post *Post, categoryIds []int) (int, error) {
 		return -1, insertPostCategoriesErr
 	}
 
+	insertPostFilesErr := InsertPostFiles(int(lastInsertID), uploadedFilesAddresses, post.UserId, tx)
+	if insertPostFilesErr != nil {
+		tx.Rollback() // Rollback on error
+		return -1, insertPostFilesErr
+	}
+
 	// Commit the transaction
 	if err := tx.Commit(); err != nil {
 		tx.Rollback() // Rollback on error
@@ -82,7 +89,7 @@ func InsertPost(post *Post, categoryIds []int) (int, error) {
 	return int(lastInsertID), nil
 }
 
-func UpdatePost(post *Post, categories []int, user_id int) error {
+func UpdatePost(post *Post, categories []int, uploadedFilesAddresses []string, user_id int) error {
 	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
@@ -116,10 +123,22 @@ func UpdatePost(post *Post, categories []int, user_id int) error {
 		return deletePostCategoriesErr
 	}
 
+	deletePostFilesErr := UpdateStatusPostFiles(post.ID, user_id, "delete", tx)
+	if deletePostFilesErr != nil {
+		tx.Rollback() // Rollback on error
+		return deletePostFilesErr
+	}
+
 	insertPostCategoriesErr := InsertPostCategories(post.ID, categories, user_id, tx)
 	if insertPostCategoriesErr != nil {
 		tx.Rollback() // Rollback on error
 		return insertPostCategoriesErr
+	}
+
+	insertPostFilesErr := InsertPostFiles(post.ID, uploadedFilesAddresses, user_id, tx)
+	if insertPostFilesErr != nil {
+		tx.Rollback() // Rollback on error
+		return insertPostFilesErr
 	}
 
 	// Commit the transaction
@@ -164,6 +183,12 @@ func UpdateStatusPost(post_id int, status string, user_id int) error {
 		return updateStatusPostCategories
 	}
 
+	UpdateStatusPostFiles := UpdateStatusPostFiles(post_id, user_id, status, tx)
+	if UpdateStatusPostFiles != nil {
+		tx.Rollback() // Rollback on error
+		return UpdateStatusPostFiles
+	}
+
 	// Commit the transaction
 	if err := tx.Commit(); err != nil {
 		tx.Rollback() // Rollback on error
@@ -181,10 +206,14 @@ func ReadAllPosts() ([]Post, error) {
 	rows, selectError := db.Query(`
         SELECT p.id as post_id, p.uuid as post_uuid, p.title as post_title, p.description as post_description, p.status as post_status, p.created_at as post_created_at, p.updated_at as post_updated_at, p.updated_by as post_updated_by,
 			u.id as user_id, u.name as user_name, u.username as user_username, u.email as user_email,
-			c.id as category_id, c.name as category_name
+			c.id as category_id, c.name as category_name,
+			IFNULL(pf.id, 0) as post_file_id, pf.file_address
 		FROM posts p
 			INNER JOIN users u
 				ON p.user_id = u.id
+			LEFT JOIN post_files pf
+				ON p.id = pf.post_id
+				AND pf.status = 'enable'
 			LEFT JOIN post_categories pc
 				ON p.id = pc.post_id
 				AND pc.status = 'enable'
@@ -208,6 +237,7 @@ func ReadAllPosts() ([]Post, error) {
 		var post Post
 		var user userManagementModels.User
 		var category Category
+		var postFile PostFile
 
 		// Scan the post and user data
 		err := rows.Scan(
@@ -215,20 +245,44 @@ func ReadAllPosts() ([]Post, error) {
 			&post.CreatedAt, &post.UpdatedAt, &post.UpdatedBy, &post.UserId,
 			&user.Name, &user.Username, &user.Email,
 			&category.ID, &category.Name,
+			&postFile.ID, &postFile.FileAddress,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("error scanning row: %v", err)
 		}
 
-		// Check if the post already exists in the postMap
-		if existingPost, found := postMap[post.ID]; found {
-			// If the post exists, append the category to the existing post's Categories
-			existingPost.Categories = append(existingPost.Categories, category)
-		} else {
-			// If the post doesn't exist in the map, add it and initialize the Categories field
+		// Check if the post already exists in the map
+		existingPost, found := postMap[post.ID]
+		if !found {
 			post.User = user
-			post.Categories = []Category{category}
+			post.Categories = []Category{}
+			post.PostFiles = []PostFile{}
 			postMap[post.ID] = &post
+			existingPost = &post
+		}
+
+		// Ensure unique categories
+		isCategoryAdded := false
+		for _, c := range existingPost.Categories {
+			if c.ID == category.ID {
+				isCategoryAdded = true
+				break
+			}
+		}
+		if !isCategoryAdded && category.ID != 0 {
+			existingPost.Categories = append(existingPost.Categories, category)
+		}
+
+		// Ensure unique post files
+		isFileAdded := false
+		for _, f := range existingPost.PostFiles {
+			if f.ID == postFile.ID {
+				isFileAdded = true
+				break
+			}
+		}
+		if !isFileAdded && postFile.ID != 0 {
+			existingPost.PostFiles = append(existingPost.PostFiles, postFile)
 		}
 	}
 
@@ -257,10 +311,14 @@ func ReadPostsByCategoryId(category_id int) ([]Post, error) {
 	rows, selectError := db.Query(`
         SELECT p.id as post_id, p.uuid as post_uuid, p.title as post_title, p.description as post_description, p.status as post_status, p.created_at as post_created_at, p.updated_at as post_updated_at, p.updated_by as post_updated_by,
 			u.id as user_id, u.name as user_name, u.username as user_username, u.email as user_email,
-			c.id as category_id, c.name as category_name
+			c.id as category_id, c.name as category_name,
+			IFNULL(pf.id, 0) as post_file_id, pf.file_address
 		FROM posts p
 			INNER JOIN users u
 				ON p.user_id = u.id
+			LEFT JOIN post_files pf
+				ON p.id = pf.post_id
+				AND pf.status = 'enable'
 			INNER JOIN post_categories filterd_pc
 				ON p.id = filterd_pc.post_id
 				AND filterd_pc.status = 'enable'
@@ -288,6 +346,7 @@ func ReadPostsByCategoryId(category_id int) ([]Post, error) {
 		var post Post
 		var user userManagementModels.User
 		var category Category
+		var postFile PostFile
 
 		// Scan the post and user data
 		err := rows.Scan(
@@ -295,20 +354,44 @@ func ReadPostsByCategoryId(category_id int) ([]Post, error) {
 			&post.CreatedAt, &post.UpdatedAt, &post.UpdatedBy, &post.UserId,
 			&user.Name, &user.Username, &user.Email,
 			&category.ID, &category.Name,
+			&postFile.ID, &postFile.FileAddress,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("error scanning row: %v", err)
 		}
 
-		// Check if the post already exists in the postMap
-		if existingPost, found := postMap[post.ID]; found {
-			// If the post exists, append the category to the existing post's Categories
-			existingPost.Categories = append(existingPost.Categories, category)
-		} else {
-			// If the post doesn't exist in the map, add it and initialize the Categories field
+		// Check if the post already exists in the map
+		existingPost, found := postMap[post.ID]
+		if !found {
 			post.User = user
-			post.Categories = []Category{category}
+			post.Categories = []Category{}
+			post.PostFiles = []PostFile{}
 			postMap[post.ID] = &post
+			existingPost = &post
+		}
+
+		// Ensure unique categories
+		isCategoryAdded := false
+		for _, c := range existingPost.Categories {
+			if c.ID == category.ID {
+				isCategoryAdded = true
+				break
+			}
+		}
+		if !isCategoryAdded && category.ID != 0 {
+			existingPost.Categories = append(existingPost.Categories, category)
+		}
+
+		// Ensure unique post files
+		isFileAdded := false
+		for _, f := range existingPost.PostFiles {
+			if f.ID == postFile.ID {
+				isFileAdded = true
+				break
+			}
+		}
+		if !isFileAdded && postFile.ID != 0 {
+			existingPost.PostFiles = append(existingPost.PostFiles, postFile)
 		}
 	}
 
@@ -339,10 +422,14 @@ func FilterPosts(searchTerm string) ([]Post, error) {
 	rows, selectError := db.Query(`
         SELECT p.id as post_id, p.uuid as post_uuid, p.title as post_title, p.description as post_description, p.status as post_status, p.created_at as post_created_at, p.updated_at as post_updated_at, p.updated_by as post_updated_by,
 			u.id as user_id, u.name as user_name, u.username as user_username, u.email as user_email,
-			c.id as category_id, c.name as category_name
+			c.id as category_id, c.name as category_name,
+			IFNULL(pf.id, 0) as post_file_id, pf.file_address
 		FROM posts p
 			INNER JOIN users u
 				ON p.user_id = u.id
+			LEFT JOIN post_files pf
+				ON p.id = pf.post_id
+				AND pf.status = 'enable'
 			LEFT JOIN post_categories pc
 				ON p.id = pc.post_id
 				AND pc.status = 'enable'
@@ -367,6 +454,7 @@ func FilterPosts(searchTerm string) ([]Post, error) {
 		var post Post
 		var user userManagementModels.User
 		var category Category
+		var postFile PostFile
 
 		// Scan the post and user data
 		err := rows.Scan(
@@ -374,20 +462,44 @@ func FilterPosts(searchTerm string) ([]Post, error) {
 			&post.CreatedAt, &post.UpdatedAt, &post.UpdatedBy, &post.UserId,
 			&user.Name, &user.Username, &user.Email,
 			&category.ID, &category.Name,
+			&postFile.ID, &postFile.FileAddress,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("error scanning row: %v", err)
 		}
 
-		// Check if the post already exists in the postMap
-		if existingPost, found := postMap[post.ID]; found {
-			// If the post exists, append the category to the existing post's Categories
-			existingPost.Categories = append(existingPost.Categories, category)
-		} else {
-			// If the post doesn't exist in the map, add it and initialize the Categories field
+		// Check if the post already exists in the map
+		existingPost, found := postMap[post.ID]
+		if !found {
 			post.User = user
-			post.Categories = []Category{category}
+			post.Categories = []Category{}
+			post.PostFiles = []PostFile{}
 			postMap[post.ID] = &post
+			existingPost = &post
+		}
+
+		// Ensure unique categories
+		isCategoryAdded := false
+		for _, c := range existingPost.Categories {
+			if c.ID == category.ID {
+				isCategoryAdded = true
+				break
+			}
+		}
+		if !isCategoryAdded && category.ID != 0 {
+			existingPost.Categories = append(existingPost.Categories, category)
+		}
+
+		// Ensure unique post files
+		isFileAdded := false
+		for _, f := range existingPost.PostFiles {
+			if f.ID == postFile.ID {
+				isFileAdded = true
+				break
+			}
+		}
+		if !isFileAdded && postFile.ID != 0 {
+			existingPost.PostFiles = append(existingPost.PostFiles, postFile)
 		}
 	}
 
@@ -416,11 +528,15 @@ func ReadPostsByUserId(userId int) ([]Post, error) {
 	rows, selectError := db.Query(`
         SELECT p.id as post_id, p.uuid as post_uuid, p.title as post_title, p.description as post_description, p.status as post_status, p.created_at as post_created_at, p.updated_at as post_updated_at, p.updated_by as post_updated_by,
 			u.id as user_id, u.name as user_name, u.username as user_username, u.email as user_email,
-			c.id as category_id, c.name as category_name
+			c.id as category_id, c.name as category_name,
+			IFNULL(pf.id, 0) as post_file_id, pf.file_address
 		FROM posts p
 			INNER JOIN users u
 				ON p.user_id = u.id
 				AND u.id = ?
+			LEFT JOIN post_files pf
+				ON p.id = pf.post_id
+				AND pf.status = 'enable'
 			LEFT JOIN post_categories pc
 				ON p.id = pc.post_id
 				AND pc.status = 'enable'
@@ -444,6 +560,7 @@ func ReadPostsByUserId(userId int) ([]Post, error) {
 		var post Post
 		var user userManagementModels.User
 		var category Category
+		var postFile PostFile
 
 		// Scan the post and user data
 		err := rows.Scan(
@@ -451,20 +568,44 @@ func ReadPostsByUserId(userId int) ([]Post, error) {
 			&post.CreatedAt, &post.UpdatedAt, &post.UpdatedBy, &post.UserId,
 			&user.Name, &user.Username, &user.Email,
 			&category.ID, &category.Name,
+			&postFile.ID, &postFile.FileAddress,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("error scanning row: %v", err)
 		}
 
-		// Check if the post already exists in the postMap
-		if existingPost, found := postMap[post.ID]; found {
-			// If the post exists, append the category to the existing post's Categories
-			existingPost.Categories = append(existingPost.Categories, category)
-		} else {
-			// If the post doesn't exist in the map, add it and initialize the Categories field
+		// Check if the post already exists in the map
+		existingPost, found := postMap[post.ID]
+		if !found {
 			post.User = user
-			post.Categories = []Category{category}
+			post.Categories = []Category{}
+			post.PostFiles = []PostFile{}
 			postMap[post.ID] = &post
+			existingPost = &post
+		}
+
+		// Ensure unique categories
+		isCategoryAdded := false
+		for _, c := range existingPost.Categories {
+			if c.ID == category.ID {
+				isCategoryAdded = true
+				break
+			}
+		}
+		if !isCategoryAdded && category.ID != 0 {
+			existingPost.Categories = append(existingPost.Categories, category)
+		}
+
+		// Ensure unique post files
+		isFileAdded := false
+		for _, f := range existingPost.PostFiles {
+			if f.ID == postFile.ID {
+				isFileAdded = true
+				break
+			}
+		}
+		if !isFileAdded && postFile.ID != 0 {
+			existingPost.PostFiles = append(existingPost.PostFiles, postFile)
 		}
 	}
 
@@ -493,13 +634,17 @@ func ReadPostsLikedByUserId(userId int) ([]Post, error) {
 	rows, selectError := db.Query(`
         SELECT p.id as post_id, p.uuid as post_uuid, p.title as post_title, p.description as post_description, p.status as post_status, p.created_at as post_created_at, p.updated_at as post_updated_at, p.updated_by as post_updated_by,
 			u.id as user_id, u.name as user_name, u.username as user_username, u.email as user_email,
-			c.id as category_id, c.name as category_name
+			c.id as category_id, c.name as category_name,
+			IFNULL(pf.id, 0) as post_file_id, pf.file_address
 		FROM posts p
 			INNER JOIN post_likes pl
 				ON pl.post_id = p.id
 				AND pl.status = 'enable'
 			INNER JOIN users u
 				ON p.user_id = u.id
+			LEFT JOIN post_files pf
+				ON p.id = pf.post_id
+				AND pf.status = 'enable'
 			INNER JOIN users liked_user
 				ON pl.user_id = liked_user.id
 				AND liked_user.id = ?
@@ -526,6 +671,7 @@ func ReadPostsLikedByUserId(userId int) ([]Post, error) {
 		var post Post
 		var user userManagementModels.User
 		var category Category
+		var postFile PostFile
 
 		// Scan the post and user data
 		err := rows.Scan(
@@ -533,20 +679,44 @@ func ReadPostsLikedByUserId(userId int) ([]Post, error) {
 			&post.CreatedAt, &post.UpdatedAt, &post.UpdatedBy, &post.UserId,
 			&user.Name, &user.Username, &user.Email,
 			&category.ID, &category.Name,
+			&postFile.ID, &postFile.FileAddress,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("error scanning row: %v", err)
 		}
 
-		// Check if the post already exists in the postMap
-		if existingPost, found := postMap[post.ID]; found {
-			// If the post exists, append the category to the existing post's Categories
-			existingPost.Categories = append(existingPost.Categories, category)
-		} else {
-			// If the post doesn't exist in the map, add it and initialize the Categories field
+		// Check if the post already exists in the map
+		existingPost, found := postMap[post.ID]
+		if !found {
 			post.User = user
-			post.Categories = []Category{category}
+			post.Categories = []Category{}
+			post.PostFiles = []PostFile{}
 			postMap[post.ID] = &post
+			existingPost = &post
+		}
+
+		// Ensure unique categories
+		isCategoryAdded := false
+		for _, c := range existingPost.Categories {
+			if c.ID == category.ID {
+				isCategoryAdded = true
+				break
+			}
+		}
+		if !isCategoryAdded && category.ID != 0 {
+			existingPost.Categories = append(existingPost.Categories, category)
+		}
+
+		// Ensure unique post files
+		isFileAdded := false
+		for _, f := range existingPost.PostFiles {
+			if f.ID == postFile.ID {
+				isFileAdded = true
+				break
+			}
+		}
+		if !isFileAdded && postFile.ID != 0 {
+			existingPost.PostFiles = append(existingPost.PostFiles, postFile)
 		}
 	}
 
@@ -578,6 +748,7 @@ func ReadPostById(postId int, checkLikeForUser int) (Post, error) {
 			(SELECT COUNT(DISTINCT id) from post_likes WHERE post_id = p.id AND status != 'delete' AND type = 'dislike') AS number_of_dislikes,
 			u.id as user_id, u.name as user_name, u.username as user_username, u.email as user_email,
 			c.id as category_id, c.name as category_name,
+			IFNULL(pf.id, 0) as post_file_id, pf.file_address,
 			CASE 
                 WHEN EXISTS (SELECT 1 FROM post_likes WHERE post_id = p.id AND status != 'delete' AND type = 'like' AND user_id = ?) THEN 1
                 ELSE 0
@@ -590,6 +761,9 @@ func ReadPostById(postId int, checkLikeForUser int) (Post, error) {
 			INNER JOIN users u
 				ON p.user_id = u.id
 				AND p.id = ?
+			LEFT JOIN post_files pf
+				ON p.id = pf.post_id
+				AND pf.status = 'enable'
 			LEFT JOIN post_categories pc
 				ON p.id = pc.post_id
 				AND pc.status = 'enable'
@@ -606,11 +780,11 @@ func ReadPostById(postId int, checkLikeForUser int) (Post, error) {
 
 	var post Post
 	var user userManagementModels.User
-	var categories []Category
 
 	// Scan the records
 	for rows.Next() {
 		var category Category
+		var postFile PostFile
 
 		err := rows.Scan(
 			&post.ID, &post.UUID, &post.Title, &post.Description, &post.Status,
@@ -618,6 +792,7 @@ func ReadPostById(postId int, checkLikeForUser int) (Post, error) {
 			&post.NumberOfLikes, &post.NumberOfDislikes,
 			&post.UserId, &user.Name, &user.Username, &user.Email,
 			&category.ID, &category.Name,
+			&postFile.ID, &postFile.FileAddress,
 			&post.IsLikedByUser, &post.IsDislikedByUser,
 		)
 		if err != nil {
@@ -629,17 +804,35 @@ func ReadPostById(postId int, checkLikeForUser int) (Post, error) {
 			post.User = user
 		}
 
-		// Append category to post categories list
-		categories = append(categories, category)
+		// Ensure unique categories
+		isCategoryAdded := false
+		for _, c := range post.Categories {
+			if c.ID == category.ID {
+				isCategoryAdded = true
+				break
+			}
+		}
+		if !isCategoryAdded && category.ID != 0 {
+			post.Categories = append(post.Categories, category)
+		}
+
+		// Ensure unique post files
+		isFileAdded := false
+		for _, f := range post.PostFiles {
+			if f.ID == postFile.ID {
+				isFileAdded = true
+				break
+			}
+		}
+		if !isFileAdded && postFile.ID != 0 {
+			post.PostFiles = append(post.PostFiles, postFile)
+		}
 	}
 
 	// If no rows were returned, the post doesn't exist
 	if post.ID == 0 {
 		return Post{}, fmt.Errorf("post with ID %d not found", postId)
 	}
-
-	// Assign categories to the post
-	post.Categories = categories
 
 	// Check for any errors during row iteration
 	if err := rows.Err(); err != nil {
@@ -660,6 +853,7 @@ func ReadPostByUUID(postUUID string, checkLikeForUser int) (Post, error) {
 			(SELECT COUNT(DISTINCT id) from post_likes WHERE post_id = p.id AND status != 'delete' AND type = 'dislike') AS number_of_dislikes,
 			u.id as user_id, u.name as user_name, u.username as user_username, u.email as user_email,
 			c.id as category_id, c.name as category_name,
+			IFNULL(pf.id, 0) as post_file_id, pf.file_address,
 			CASE 
                 WHEN EXISTS (SELECT 1 FROM post_likes WHERE post_id = p.id AND status != 'delete' AND type = 'like' AND user_id = ?) THEN 1
                 ELSE 0
@@ -672,6 +866,9 @@ func ReadPostByUUID(postUUID string, checkLikeForUser int) (Post, error) {
 			INNER JOIN users u
 				ON p.user_id = u.id
 				AND p.uuid = ?
+			LEFT JOIN post_files pf
+				ON p.id = pf.post_id
+				AND pf.status = 'enable'
 			LEFT JOIN post_categories pc
 				ON p.id = pc.post_id
 				AND pc.status = 'enable'
@@ -688,11 +885,11 @@ func ReadPostByUUID(postUUID string, checkLikeForUser int) (Post, error) {
 
 	var post Post
 	var user userManagementModels.User
-	var categories []Category
 
 	// Scan the records
 	for rows.Next() {
 		var category Category
+		var postFile PostFile
 
 		err := rows.Scan(
 			&post.ID, &post.UUID, &post.Title, &post.Description, &post.Status,
@@ -700,14 +897,36 @@ func ReadPostByUUID(postUUID string, checkLikeForUser int) (Post, error) {
 			&post.NumberOfLikes, &post.NumberOfDislikes,
 			&post.UserId, &user.Name, &user.Username, &user.Email,
 			&category.ID, &category.Name,
+			&postFile.ID, &postFile.FileAddress,
 			&post.IsLikedByUser, &post.IsDislikedByUser,
 		)
 		if err != nil {
 			return Post{}, fmt.Errorf("error scanning row: %v", err)
 		}
 
-		// Append category to post categories list
-		categories = append(categories, category)
+		// Ensure unique categories
+		isCategoryAdded := false
+		for _, c := range post.Categories {
+			if c.ID == category.ID {
+				isCategoryAdded = true
+				break
+			}
+		}
+		if !isCategoryAdded && category.ID != 0 {
+			post.Categories = append(post.Categories, category)
+		}
+
+		// Ensure unique post files
+		isFileAdded := false
+		for _, f := range post.PostFiles {
+			if f.ID == postFile.ID {
+				isFileAdded = true
+				break
+			}
+		}
+		if !isFileAdded && postFile.ID != 0 {
+			post.PostFiles = append(post.PostFiles, postFile)
+		}
 	}
 
 	// If no rows were returned, the post doesn't exist
@@ -715,8 +934,6 @@ func ReadPostByUUID(postUUID string, checkLikeForUser int) (Post, error) {
 		return Post{}, fmt.Errorf("post with UUID %s not found", postUUID)
 	}
 
-	// Assign categories to the post
-	post.Categories = categories
 	post.User = user
 
 	// Check for any errors during row iteration
@@ -735,11 +952,15 @@ func ReadPostByUserID(postId int, userID int) (Post, error) {
         SELECT p.id as post_id, p.uuid as post_uuid, p.title as post_title, p.description as post_description, p.status as post_status, p.created_at as post_created_at, p.updated_at as post_updated_at, p.updated_by as post_updated_by,
 			p.user_id as post_user_id, u.id as user_id, u.name as user_name, u.username as user_username, u.email as user_email,
 			c.id as category_id, c.name as category_name,
+			IFNULL(pf.id, 0) as post_file_id, pf.file_address,
 			COALESCE(pl.type, '')
 		FROM posts p
 			INNER JOIN users u
 				ON p.user_id = u.id
 				AND p.id = ?
+			LEFT JOIN post_files pf
+				ON p.id = pf.post_id
+				AND pf.status = 'enable'
 			LEFT JOIN post_categories pc
 				ON p.id = pc.post_id
 				AND pc.status = 'enable'
@@ -758,17 +979,20 @@ func ReadPostByUserID(postId int, userID int) (Post, error) {
 
 	var post Post
 	var user userManagementModels.User
-	var categories []Category
 
 	// Scan the records
 	for rows.Next() {
+		fmt.Println(1)
 		var category Category
+		var postFile PostFile
 		var Type string
 		err := rows.Scan(
 			&post.ID, &post.UUID, &post.Title, &post.Description, &post.Status,
 			&post.CreatedAt, &post.UpdatedAt, &post.UpdatedBy, &post.UserId,
 			&user.ID, &user.Name, &user.Username, &user.Email,
-			&category.ID, &category.Name, &Type,
+			&category.ID, &category.Name,
+			&postFile.ID, &postFile.FileAddress,
+			&Type,
 		)
 		if err != nil {
 			return Post{}, fmt.Errorf("error scanning row: %v", err)
@@ -785,12 +1009,32 @@ func ReadPostByUserID(postId int, userID int) (Post, error) {
 		} else if Type == "dislike" {
 			post.NumberOfDislikes++
 		}
-		// Append category to post categories list
-		categories = append(categories, category)
+
+		// Ensure unique categories
+		isCategoryAdded := false
+		for _, c := range post.Categories {
+			if c.ID == category.ID {
+				isCategoryAdded = true
+				break
+			}
+		}
+		if !isCategoryAdded && category.ID != 0 {
+			post.Categories = append(post.Categories, category)
+		}
+
+		// Ensure unique post files
+		isFileAdded := false
+		for _, f := range post.PostFiles {
+			if f.ID == postFile.ID {
+				isFileAdded = true
+				break
+			}
+		}
+		if !isFileAdded && postFile.ID != 0 {
+			post.PostFiles = append(post.PostFiles, postFile)
+		}
 	}
 
-	// Assign categories to the post
-	post.Categories = categories
 	post.User = user
 
 	// Check for any errors during row iteration
@@ -798,5 +1042,6 @@ func ReadPostByUserID(postId int, userID int) (Post, error) {
 		return Post{}, fmt.Errorf("row iteration error: %v", err)
 	}
 
+	fmt.Println("im here")
 	return post, nil
 }

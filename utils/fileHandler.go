@@ -28,5 +28,5 @@ func FileUpload(file multipart.File, handler *multipart.FileHeader) (string, err
 		return "", err
 	}
 	fmt.Printf("File uploaded successfully: %s\n", filePath)
-	return filePath, nil
+	return filePath[6:], nil
 }
