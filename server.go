@@ -19,6 +19,7 @@ func setupRoutes() {
 	http.Handle("/css/", http.FileServer(http.Dir("assets/")))
 	http.Handle("/js/", http.FileServer(http.Dir("assets/")))
 	http.Handle("/img/", http.FileServer(http.Dir("assets/")))
+	http.Handle("/uploads/", http.FileServer(http.Dir("static/")))
 
 	// Register route handlers
 	http.HandleFunc("/", forumManagementControllers.MainPageHandler)
@@ -166,6 +167,7 @@ func finishTest() {
 
 // main initializes the HTTP server, registers routes, and starts listening for incoming requests.
 func main() {
+	// remove fresh version of database
 	if err := db.ExecuteSQLFile("db/forum.sql"); err != nil {
 		log.Fatalf("Error: %v", err)
 		os.Exit(1)

@@ -1,6 +1,7 @@
 -- SQLite
 DROP TABLE IF EXISTS "comment_likes";
 DROP TABLE IF EXISTS "post_likes";
+DROP TABLE IF EXISTS "post_files";
 DROP TABLE IF EXISTS "comments";
 DROP TABLE IF EXISTS "post_categories";
 DROP TABLE IF EXISTS "posts";
@@ -44,6 +45,18 @@ CREATE TABLE "posts" (
   "updated_at" DATETIME,
   "updated_by" INTEGER,
   FOREIGN KEY (user_id) REFERENCES "users" ("id"),
+  FOREIGN KEY (updated_by) REFERENCES "users" ("id")
+);
+
+CREATE TABLE "post_files" (
+  "id" INTEGER PRIMARY KEY,
+  "post_id" INTEGER NOT NULL,
+  "file_address" TEXT NOT NULL,
+  "status" TEXT NOT NULL CHECK ("status" IN ('enable', 'delete')) DEFAULT 'enable',
+  "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" DATETIME,
+  "updated_by" INTEGER,
+  FOREIGN KEY (post_id) REFERENCES "posts" ("id"),
   FOREIGN KEY (updated_by) REFERENCES "users" ("id")
 );
 

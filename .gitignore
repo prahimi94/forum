@@ -5,3 +5,9 @@
 *.db
 *.db-*
 docker-compose.override.yml
+
+# Ignore everything inside static/uploads/
+static/uploads/*
+
+# But don't ignore index.html
+!static/uploads/index.html

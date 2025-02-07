@@ -494,6 +494,8 @@ func SubmitPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	r.ParseMultipartForm(10 << 20)
+
 	title := r.FormValue("title")
 	description := r.FormValue("description")
 	categories := r.Form["categories"]
@@ -501,6 +503,24 @@ func SubmitPost(w http.ResponseWriter, r *http.Request) {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
 	}
+
+	file, handler, err := r.FormFile("myFile")
+	if err != nil {
+		fmt.Println("Error Retrieving the File")
+		fmt.Println(err)
+		return
+	}
+	defer file.Close()
+	fmt.Printf("Uploaded File: %+v\n", handler.Filename)
+	fmt.Printf("File Size: %+v\n", handler.Size)
+	fmt.Printf("MIME Header: %+v\n", handler.Header)
+
+	fileAddress, err := utils.FileUpload(file, handler)
+	if err != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	fmt.Println(fileAddress)
 
 	post := &models.Post{
 		Title:       title,
