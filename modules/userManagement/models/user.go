@@ -13,17 +13,18 @@ import (
 
 // User struct represents the user data model
 type User struct {
-	ID        int        `json:"id"`
-	UUID      string     `json:"uuid"`
-	Type      string     `json:"type"`
-	Name      string     `json:"name"`
-	Username  string     `json:"username"`
-	Email     string     `json:"email"`
-	Password  string     `json:"password"`
-	Status    string     `json:"status"`
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt *time.Time `json:"updated_at"`
-	UpdatedBy *int       `json:"updated_by"`
+	ID           int        `json:"id"`
+	UUID         string     `json:"uuid"`
+	Type         string     `json:"type"`
+	Name         string     `json:"name"`
+	Username     string     `json:"username"`
+	Email        string     `json:"email"`
+	Password     string     `json:"password"`
+	ProfilePhoto string     `json:"profile_photo"`
+	Status       string     `json:"status"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    *time.Time `json:"updated_at"`
+	UpdatedBy    *int       `json:"updated_by"`
 }
 
 func InsertUser(user *User) (int, error) {
@@ -74,6 +75,22 @@ func InsertUser(user *User) (int, error) {
 	return int(userId), nil
 }
 
+func UpdateProfilePhoto(user *User) error {
+	db := db.OpenDBConnection()
+	defer db.Close() // Close the connection after the function finishes
+
+	updateUser := `UPDATE users
+					SET profile_photo = ?,
+						updated_at = CURRENT_TIMESTAMP,
+						updated_by = ?
+					WHERE id = ?;`
+	_, updateErr := db.Exec(updateUser, user.ProfilePhoto, user.ID, user.ID)
+	if updateErr != nil {
+		return updateErr
+	}
+
+	return nil
+}
 func AuthenticateUser(username, password string) (bool, int, error) {
 	// Open SQLite database
 	db := db.OpenDBConnection()

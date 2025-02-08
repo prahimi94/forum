@@ -27,7 +27,11 @@
                 <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center" 
                      style="width: 40px; height: 40px; cursor: pointer;" 
                      id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                     {{if .ProfilePhoto}}
+                     <img src="/uploads/{{.ProfilePhoto}}" alt="user image" class="rounded-circle" style="width: 40px; height: 40px; cursor: pointer;" >
+                     {{else}}
                      <i class="fa-solid fa-user fa-beat"></i>
+                     {{end}}
                 </div>
                 <ul class="dropdown-menu" aria-labelledby="userDropdown">
                     <!-- <li><a class="dropdown-item" href="#"><i class="fas fa-shield-alt me-2"></i> Profile</a></li> -->

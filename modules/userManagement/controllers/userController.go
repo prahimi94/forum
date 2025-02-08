@@ -1,10 +1,14 @@
 package controller
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	errorManagementControllers "forum/modules/errorManagement/controllers"
 	"forum/modules/userManagement/models"
+	"forum/utils"
 	"net/http"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -171,6 +175,80 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 func renderAuthPage(w http.ResponseWriter, errorMsg string) {
 	tmpl := template.Must(template.ParseFiles(publicUrl + "authPage.html"))
 	tmpl.Execute(w, AuthPageErrorData{ErrorMessage: errorMsg})
+}
+
+func UpdateProfilePhoto(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
+		return
+	}
+
+	loginStatus, loginUser, _, checkLoginError := CheckLogin(w, r)
+	if checkLoginError != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+	if loginStatus {
+		fmt.Println("logged in userid is: ", loginUser.ID)
+		// return
+	} else {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
+		return
+	}
+
+	const maxUploadSize = 2 << 20 // 2 MB
+
+	// Limit the request body size
+	r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
+
+	file, handler, err := r.FormFile("profile_photo")
+	if err != nil {
+		http.Error(w, "File is too large or missing", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	// Extra safety: check file size from the header
+	if handler.Size > maxUploadSize {
+		http.Error(w, "File size exceeds the 2MB limit", http.StatusRequestEntityTooLarge)
+		return
+	}
+
+	idStr := r.FormValue("id")
+
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+
+	// Call your file upload function
+	uploadedFile, err := utils.FileUpload(file, handler)
+	if err != nil {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		return
+	}
+
+	user := &models.User{
+		ID:           id,
+		ProfilePhoto: uploadedFile,
+	}
+
+	// Update a record while checking duplicates
+	updateError := models.UpdateProfilePhoto(user)
+	if updateError != nil {
+		if errors.Is(updateError, sql.ErrNoRows) {
+			// todo show toast
+			fmt.Println("Post already exists!")
+		} else {
+			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+		}
+		return
+	} else {
+		fmt.Println("Post updated successfully!")
+	}
+
+	RedirectToIndex(w, r)
 }
 
 func sessionGenerator(w http.ResponseWriter, r *http.Request, userId int) {

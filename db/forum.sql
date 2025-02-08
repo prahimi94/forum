@@ -27,6 +27,7 @@ CREATE TABLE "users" (
   "name" TEXT,
   "username" TEXT UNIQUE,
   "email" TEXT UNIQUE,
+  "profile_photo" TEXT NULL,
   "password" TEXT,
   "status" TEXT NOT NULL CHECK ("status" IN ('enable', 'disable', 'delete')) DEFAULT 'enable',
   "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
