@@ -51,14 +51,18 @@
             <div class="col-md-3">
                 <p>Related Image</p>
             </div>
-            {{range .Post.PostFiles}}
-            <div class="col-md-9">
-                <img src="/uploads/{{.FileUploadedName}}" alt="post image" width="375" height="375">
-                <!-- <img src="/uploads/{{.FileUploadedName}}" alt="post image" width="500" height="375"> -->
-                <!-- <img src="/uploads/{{.FileUploadedName}}" alt="post image" style="max-width: 100%; height: auto;"> -->
-            </div>
-            {{end}}
         </div>
+
+        {{range .Post.PostFiles}}
+            <div class="row">
+                <div class="col-md-6">
+                    <img src="/uploads/{{.FileUploadedName}}" alt="post image" height="375">
+                    <!-- <img src="/uploads/{{.FileUploadedName}}" alt="post image" width="500" height="375"> -->
+                    <!-- <img src="/uploads/{{.FileUploadedName}}" alt="post image" style="max-width: 100%; height: auto;"> -->
+                </div>
+            </div>
+        {{end}}
+            
         <div class="row">
             <hr>
         </div>

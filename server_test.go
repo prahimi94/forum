@@ -1,6 +1,7 @@
 package main
 
 import (
+	"forum/routes"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -19,7 +20,7 @@ func init() {
 func TestRoutes(t *testing.T) {
 	// Register the routes by calling setupRoutes.
 	_, sessionToken, _ := testInit()
-	setupRoutes()
+	routes.SetupRoutes()
 
 	testSessionCookie := &http.Cookie{
 		Name:  "session_token", // Adjust the name to match your session cookie name.

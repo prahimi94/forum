@@ -1,7 +1,6 @@
 package models
 
 import (
-	"database/sql"
 	"fmt"
 	"forum/db"
 	userManagementModels "forum/modules/userManagement/models"
@@ -50,13 +49,6 @@ func InsertPost(post *Post, categoryIds []int, uploadedFiles map[string]string) 
 	insertQuery := `INSERT INTO posts (uuid, title, description, user_id) VALUES (?, ?, ?, ?);`
 	result, insertErr := tx.Exec(insertQuery, post.UUID, post.Title, post.Description, post.UserId)
 	if insertErr != nil {
-		tx.Rollback() // Rollback on error
-		// Check if the error is a SQLite constraint violation
-		if sqliteErr, ok := insertErr.(interface{ ErrorCode() int }); ok {
-			if sqliteErr.ErrorCode() == 19 { // SQLite constraint violation error code
-				return -1, sql.ErrNoRows // Return custom error to indicate a duplicate
-			}
-		}
 		return -1, insertErr
 	}
 
@@ -107,13 +99,6 @@ func UpdatePost(post *Post, categories []int, uploadedFiles map[string]string, u
 					WHERE id = ?;`
 	_, updateErr := tx.Exec(updateQuery, post.Title, post.Description, user_id, post.ID)
 	if updateErr != nil {
-		tx.Rollback() // Rollback on error
-		// Check if the error is a SQLite constraint violation
-		if sqliteErr, ok := updateErr.(interface{ ErrorCode() int }); ok {
-			if sqliteErr.ErrorCode() == 19 { // SQLite constraint violation error code
-				return sql.ErrNoRows // Return custom error to indicate a duplicate
-			}
-		}
 		return updateErr
 	}
 
@@ -167,13 +152,6 @@ func UpdateStatusPost(post_id int, status string, user_id int) error {
 					WHERE id = ?;`
 	_, updateErr := tx.Exec(updateQuery, status, user_id, post_id)
 	if updateErr != nil {
-		tx.Rollback() // Rollback on error
-		// Check if the error is a SQLite constraint violation
-		if sqliteErr, ok := updateErr.(interface{ ErrorCode() int }); ok {
-			if sqliteErr.ErrorCode() == 19 { // SQLite constraint violation error code
-				return sql.ErrNoRows // Return custom error to indicate a duplicate
-			}
-		}
 		return updateErr
 	}
 
@@ -982,7 +960,6 @@ func ReadPostByUserID(postId int, userID int) (Post, error) {
 
 	// Scan the records
 	for rows.Next() {
-		fmt.Println(1)
 		var category Category
 		var postFile PostFile
 		var Type string

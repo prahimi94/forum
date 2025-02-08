@@ -1,13 +1,14 @@
 package controller
 
 import (
-	"fmt"
+	"forum/middlewares"
 	errorManagementControllers "forum/modules/errorManagement/controllers"
 	"forum/modules/forumManagement/models"
 	"net/http"
 	"strconv"
 
 	userManagementControllers "forum/modules/userManagement/controllers"
+	userManagementModels "forum/modules/userManagement/models"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -18,17 +19,11 @@ func ReadAllComments(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
-	if checkLoginError != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
-	if loginStatus {
-		fmt.Println("logged in userid is: ", loginUser.ID)
-		// return
-	} else {
-		fmt.Println("user is not logged in")
-	}
+	// loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
+	// if checkLoginError != nil {
+	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+	// 	return
+	// }
 
 	// comments, err := models.ReadAllComments()
 	// if err != nil {
@@ -51,23 +46,17 @@ func ReadAllComments(w http.ResponseWriter, r *http.Request) {
 	// }
 }
 
-func readPostComments(w http.ResponseWriter, r *http.Request) {
+func ReadPostComments(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
 		return
 	}
 
-	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
-	if checkLoginError != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
-	if loginStatus {
-		fmt.Println("logged in userid is: ", loginUser.ID)
-		// return
-	} else {
-		fmt.Println("user is not logged in")
-	}
+	// loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
+	// if checkLoginError != nil {
+	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+	// 	return
+	// }
 
 	// comments, err := models.ReadCommentsByPostId()
 	// if err != nil {
@@ -90,23 +79,17 @@ func readPostComments(w http.ResponseWriter, r *http.Request) {
 	// }
 }
 
-func createComment(w http.ResponseWriter, r *http.Request) {
+func CreateComment(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
 		return
 	}
 
-	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
-	if checkLoginError != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
-	if loginStatus {
-		fmt.Println("logged in userid is: ", loginUser.ID)
-		// return
-	} else {
-		fmt.Println("user is not logged in")
-	}
+	// loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
+	// if !ok {
+	// 	errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
+	// 	return
+	// }
 
 	// tmpl, err := template.ParseFiles(
 	// 	publicUrl + "new_comment.html",
@@ -129,16 +112,10 @@ func SubmitComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
-	if checkLoginError != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+	loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
+	if !ok {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
-	}
-	if loginStatus {
-		fmt.Println("logged in userid is: ", loginUser.ID)
-		// return
-	} else {
-		fmt.Println("user is not logged in")
 	}
 
 	err := r.ParseForm()
@@ -162,12 +139,10 @@ func SubmitComment(w http.ResponseWriter, r *http.Request) {
 	// Insert a record while checking duplicates
 	_, insertError := models.InsertComment(post_id, loginUser.ID, description)
 	if insertError != nil {
-		fmt.Println(insertError)
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
-	} else {
-		fmt.Println("Comment added successfully!")
 	}
+
 	userManagementControllers.RedirectToPrevPage(w, r)
 
 }
@@ -177,16 +152,11 @@ func LikeComment(w http.ResponseWriter, r *http.Request) {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
 		return
 	}
-	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
-	if checkLoginError != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+
+	loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
+	if !ok {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
-	}
-	if loginStatus {
-		fmt.Println("logged in userid is: ", loginUser.ID)
-		// return
-	} else {
-		fmt.Println("user is not logged in")
 	}
 
 	err := r.ParseForm()
@@ -231,21 +201,14 @@ func UpdateComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
-	if checkLoginError != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+	loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
+	if !ok {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
-	}
-	if loginStatus {
-		fmt.Println("logged in userid is: ", loginUser.ID)
-		// return
-	} else {
-		fmt.Println("user is not logged in")
 	}
 
 	err := r.ParseForm()
 	if err != nil {
-		fmt.Println(err)
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
 	}
@@ -276,8 +239,6 @@ func UpdateComment(w http.ResponseWriter, r *http.Request) {
 	if updateError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
-	} else {
-		fmt.Println("Comment updated successfully!")
 	}
 
 	http.Redirect(w, r, "/post/"+post_uuid, http.StatusFound)
@@ -289,21 +250,14 @@ func DeleteComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
-	if checkLoginError != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
+	loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
+	if !ok {
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
-	}
-	if loginStatus {
-		fmt.Println("logged in userid is: ", loginUser.ID)
-		// return
-	} else {
-		fmt.Println("user is not logged in")
 	}
 
 	err := r.ParseForm()
 	if err != nil {
-		fmt.Println(err)
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
 	}
@@ -327,8 +281,6 @@ func DeleteComment(w http.ResponseWriter, r *http.Request) {
 	if updateError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
-	} else {
-		fmt.Println("Post delete successfully!")
 	}
 
 	http.Redirect(w, r, "/post/"+post_uuid, http.StatusFound)

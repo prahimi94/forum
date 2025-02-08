@@ -1,9 +1,7 @@
 package controller
 
 import (
-	"database/sql"
-	"errors"
-	"fmt"
+	"forum/middlewares"
 	errorManagementControllers "forum/modules/errorManagement/controllers"
 	"forum/modules/forumManagement/models"
 	"forum/utils"
@@ -23,21 +21,8 @@ func ReadAllPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
-	if checkLoginError != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
-	if loginStatus {
-		fmt.Println("logged in userid is: ", loginUser.ID)
-		// return
-	} else {
-		fmt.Println("user is not logged in")
-	}
-
 	posts, err := models.ReadAllPosts()
 	if err != nil {
-		fmt.Println(err)
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
@@ -123,14 +108,12 @@ func ReadPostsByCategory(w http.ResponseWriter, r *http.Request) {
 		publicUrl+"templates/footer.html",
 	)
 	if err != nil {
-		fmt.Println(err)
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 
 	err = tmpl.Execute(w, data_obj_sender)
 	if err != nil {
-		fmt.Println(err)
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
@@ -188,14 +171,12 @@ func FilterPosts(w http.ResponseWriter, r *http.Request) {
 		publicUrl+"templates/footer.html",
 	)
 	if err != nil {
-		fmt.Println(err)
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 
 	err = tmpl.Execute(w, data_obj_sender)
 	if err != nil {
-		fmt.Println(err)
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
@@ -213,14 +194,8 @@ func ReadMyCreatedPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
-	if checkLoginError != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
-	if loginStatus {
-		fmt.Println("logged in userid is: ", loginUser.ID)
-	} else {
+	loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
+	if !ok {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
 	}
@@ -282,14 +257,8 @@ func ReadMyLikedPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
-	if checkLoginError != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
-	if loginStatus {
-		fmt.Println("logged in userid is: ", loginUser.ID)
-	} else {
+	loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
+	if !ok {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
 	}
@@ -350,12 +319,6 @@ func ReadPost(w http.ResponseWriter, r *http.Request) {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
-	if loginStatus {
-		fmt.Println("logged in userid is: ", loginUser.ID)
-		// return
-	} else {
-		fmt.Println("user is not logged in")
-	}
 
 	uuid, errUrl := utils.ExtractUUIDFromUrl(r.URL.Path, "post")
 	if errUrl == "not found" {
@@ -382,7 +345,6 @@ func ReadPost(w http.ResponseWriter, r *http.Request) {
 	if loginStatus {
 		comments, err := models.ReadAllCommentsForPostByUserID(post.ID, loginUser.ID)
 		if err != nil {
-			fmt.Println(err)
 			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 			return
 		}
@@ -425,15 +387,9 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
-	if checkLoginError != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
-	if loginStatus {
-		fmt.Println("logged in userid is: ", loginUser.ID)
-		// return
-	} else {
+	// Get loginUser from context
+	loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
+	if !ok {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
 	}
@@ -476,15 +432,8 @@ func SubmitPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
-	if checkLoginError != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
-	if loginStatus {
-		fmt.Println("logged in userid is: ", loginUser.ID)
-		// return
-	} else {
+	loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
+	if !ok {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
 	}
@@ -506,10 +455,6 @@ func SubmitPost(w http.ResponseWriter, r *http.Request) {
 
 	// Retrieve all uploaded files
 	files := r.MultipartForm.File["postFiles"]
-	if len(files) == 0 {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
-		return
-	}
 
 	uploadedFiles := make(map[string]string)
 
@@ -520,10 +465,6 @@ func SubmitPost(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		defer file.Close()
-
-		fmt.Printf("Uploaded File: %+v\n", handler.Filename)
-		fmt.Printf("File Size: %+v\n", handler.Size)
-		fmt.Printf("MIME Header: %+v\n", handler.Header)
 
 		// Call your file upload function
 		uploadedFile, err := utils.FileUpload(file, handler)
@@ -556,15 +497,8 @@ func SubmitPost(w http.ResponseWriter, r *http.Request) {
 	// Insert a record while checking duplicates
 	_, insertError := models.InsertPost(post, categoryIds, uploadedFiles)
 	if insertError != nil {
-		if errors.Is(insertError, sql.ErrNoRows) {
-			// todo show toast
-			fmt.Println("Post already exists!")
-		} else {
-			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		}
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
-	} else {
-		fmt.Println("Post added successfully!")
 	}
 
 	http.Redirect(w, r, "/", http.StatusFound)
@@ -576,15 +510,8 @@ func EditPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
-	if checkLoginError != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
-	if loginStatus {
-		fmt.Println("logged in userid is: ", loginUser.ID)
-		// return
-	} else {
+	loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
+	if !ok {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
 	}
@@ -641,15 +568,8 @@ func UpdatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
-	if checkLoginError != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
-	if loginStatus {
-		fmt.Println("logged in userid is: ", loginUser.ID)
-		// return
-	} else {
+	loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
+	if !ok {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
 	}
@@ -680,10 +600,6 @@ func UpdatePost(w http.ResponseWriter, r *http.Request) {
 
 	// Retrieve all uploaded files
 	files := r.MultipartForm.File["postFiles"]
-	if len(files) == 0 {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
-		return
-	}
 
 	uploadedFiles := make(map[string]string)
 
@@ -694,10 +610,6 @@ func UpdatePost(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		defer file.Close()
-
-		fmt.Printf("Uploaded File: %+v\n", handler.Filename)
-		fmt.Printf("File Size: %+v\n", handler.Size)
-		fmt.Printf("MIME Header: %+v\n", handler.Header)
 
 		// Call your file upload function
 		uploadedFile, err := utils.FileUpload(file, handler)
@@ -731,15 +643,8 @@ func UpdatePost(w http.ResponseWriter, r *http.Request) {
 	// Update a record while checking duplicates
 	updateError := models.UpdatePost(post, categoryIds, uploadedFiles, loginUser.ID)
 	if updateError != nil {
-		if errors.Is(updateError, sql.ErrNoRows) {
-			// todo show toast
-			fmt.Println("Post already exists!")
-		} else {
-			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		}
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
-	} else {
-		fmt.Println("Post updated successfully!")
 	}
 
 	http.Redirect(w, r, "/post/"+uuid, http.StatusFound)
@@ -751,22 +656,14 @@ func DeletePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
-	if checkLoginError != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
-	if loginStatus {
-		fmt.Println("logged in userid is: ", loginUser.ID)
-		// return
-	} else {
+	loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
+	if !ok {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
 	}
 
 	err := r.ParseForm()
 	if err != nil {
-		fmt.Println(err)
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.BadRequestError)
 		return
 	}
@@ -787,15 +684,8 @@ func DeletePost(w http.ResponseWriter, r *http.Request) {
 	// Update a record while checking duplicates
 	updateError := models.UpdateStatusPost(post_id, "delete", loginUser.ID)
 	if updateError != nil {
-		if errors.Is(updateError, sql.ErrNoRows) {
-			// todo show toast
-			fmt.Println("Post already exists!")
-		} else {
-			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		}
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
-	} else {
-		fmt.Println("Post delete successfully!")
 	}
 
 	userManagementControllers.RedirectToIndex(w, r)
@@ -806,14 +696,9 @@ func LikePost(w http.ResponseWriter, r *http.Request) {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.MethodNotAllowedError)
 		return
 	}
-	loginStatus, loginUser, _, checkLoginError := userManagementControllers.CheckLogin(w, r)
-	if checkLoginError != nil {
-		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		return
-	}
-	if loginStatus {
-		fmt.Println("logged in userid is: ", loginUser.ID)
-	} else {
+
+	loginUser, ok := r.Context().Value(middlewares.UserContextKey).(userManagementModels.User)
+	if !ok {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.UnauthorizedError)
 		return
 	}

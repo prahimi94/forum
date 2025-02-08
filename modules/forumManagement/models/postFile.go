@@ -2,7 +2,6 @@ package models
 
 import (
 	"database/sql"
-	"fmt"
 	"time"
 )
 
@@ -39,8 +38,6 @@ func InsertPostFiles(post_id int, uploadedFiles map[string]string, user_id int, 
 		// Execute the bulk insert query
 		_, err := tx.Exec(query, values...)
 		if err != nil {
-			fmt.Println("here is error")
-			fmt.Println(err)
 			tx.Rollback() // Rollback on error
 			return err
 		}

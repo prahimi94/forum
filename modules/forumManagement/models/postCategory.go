@@ -2,7 +2,6 @@ package models
 
 import (
 	"database/sql"
-	"fmt"
 	"time"
 )
 
@@ -36,8 +35,6 @@ func InsertPostCategories(post_id int, categories []int, user_id int, tx *sql.Tx
 		// Execute the bulk insert query
 		_, err := tx.Exec(query, values...)
 		if err != nil {
-			fmt.Println("here is error")
-			fmt.Println(err)
 			tx.Rollback() // Rollback on error
 			return err
 		}

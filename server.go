@@ -1,10 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"forum/db"
-	forumManagementControllers "forum/modules/forumManagement/controllers"
-	userManagementControllers "forum/modules/userManagement/controllers"
+	"forum/routes"
 	"log"
 	"net/http"
 	"os"
@@ -14,38 +12,6 @@ import (
 )
 
 var IsTest = false
-
-func setupRoutes() {
-	http.Handle("/css/", http.FileServer(http.Dir("assets/")))
-	http.Handle("/js/", http.FileServer(http.Dir("assets/")))
-	http.Handle("/img/", http.FileServer(http.Dir("assets/")))
-	http.Handle("/uploads/", http.FileServer(http.Dir("static/")))
-
-	// Register route handlers
-	http.HandleFunc("/", forumManagementControllers.MainPageHandler)
-	// http.HandleFunc("/home/", forumManagementControllers.HomePageHandler)
-	http.HandleFunc("/auth/", userManagementControllers.AuthHandler)
-	http.HandleFunc("/logout/", userManagementControllers.Logout)
-	http.HandleFunc("/register", userManagementControllers.RegisterHandler) /*post method*/
-	http.HandleFunc("/login", userManagementControllers.LoginHandler)       /*post method*/
-
-	http.HandleFunc("/newPost/", forumManagementControllers.CreatePost)
-	http.HandleFunc("/submitPost", forumManagementControllers.SubmitPost) /*post method*/
-	http.HandleFunc("/myCreatedPosts/", forumManagementControllers.ReadMyCreatedPosts)
-	http.HandleFunc("/myLikedPosts/", forumManagementControllers.ReadMyLikedPosts)
-	http.HandleFunc("/post/", forumManagementControllers.ReadPost)
-	http.HandleFunc("/posts/", forumManagementControllers.ReadPostsByCategory)
-	http.HandleFunc("/filterPosts/", forumManagementControllers.FilterPosts)
-	http.HandleFunc("/likePost", forumManagementControllers.LikePost)
-	http.HandleFunc("/editPost/", forumManagementControllers.EditPost)
-	http.HandleFunc("/updatePost", forumManagementControllers.UpdatePost) /*post method*/
-	http.HandleFunc("/deletePost", forumManagementControllers.DeletePost) /*post method*/
-
-	http.HandleFunc("/likeComment", forumManagementControllers.LikeComment)
-	http.HandleFunc("/submitComment", forumManagementControllers.SubmitComment) /*post method*/
-	http.HandleFunc("/updateComment", forumManagementControllers.UpdateComment) /*post method*/
-	http.HandleFunc("/deleteComment", forumManagementControllers.DeleteComment) /*post method*/
-}
 
 func testInit() (bool, string, int) {
 	if IsTest {
@@ -84,8 +50,7 @@ func testInit() (bool, string, int) {
 		db.QueryRow(`SELECT id, expires_at
 					FROM sessions
 					WHERE session_token = ?`, testSessionToken).Scan(&sessionId, &expirationTime)
-		fmt.Println(sessionId)
-		fmt.Println(expirationTime)
+
 		if sessionId == -1 { //if sessionId == -1 means that this session didnt found
 			sessionExpiresAt := time.Now().Add(1 * time.Hour)
 
@@ -168,12 +133,12 @@ func finishTest() {
 // main initializes the HTTP server, registers routes, and starts listening for incoming requests.
 func main() {
 	// remove fresh version of database
-	// if err := db.ExecuteSQLFile("db/forum.sql"); err != nil {
-	// 	log.Fatalf("Error: %v", err)
-	// 	os.Exit(1)
-	// }
+	if err := db.ExecuteSQLFile("db/forum.sql"); err != nil {
+		log.Fatalf("Error: %v", err)
+		os.Exit(1)
+	}
 
-	setupRoutes()
+	routes.SetupRoutes()
 
 	//start the server on port 8080
 	log.Println("Starting server on: http://localhost:8080")

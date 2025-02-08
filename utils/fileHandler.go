@@ -53,6 +53,6 @@ func FileUpload(file multipart.File, handler *multipart.FileHeader) (string, err
 		log.Println("Error saving file:", err)
 		return "", err
 	}
-	fmt.Printf("File uploaded successfully: %s\n", filePath)
+
 	return fileUUID + fileExt, nil
 }

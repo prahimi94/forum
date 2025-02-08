@@ -1,8 +1,6 @@
 package controller
 
 import (
-	"database/sql"
-	"errors"
 	"fmt"
 	errorManagementControllers "forum/modules/errorManagement/controllers"
 	"forum/modules/userManagement/models"
@@ -32,13 +30,12 @@ func AuthHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, user, _, checkLoginError := CheckLogin(w, r)
+	loginStatus, _, _, checkLoginError := CheckLogin(w, r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 	if loginStatus {
-		fmt.Println("logged in userid is: ", user.ID)
 		RedirectToIndex(w, r)
 		return
 	}
@@ -63,13 +60,12 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, user, _, checkLoginError := CheckLogin(w, r)
+	loginStatus, _, _, checkLoginError := CheckLogin(w, r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 	if loginStatus {
-		fmt.Println("logged in userid is: ", user.ID)
 		RedirectToIndex(w, r)
 		return
 	}
@@ -115,8 +111,6 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		}
 		return
-	} else {
-		fmt.Println("User added successfully!")
 	}
 
 	sessionGenerator(w, r, userId)
@@ -130,13 +124,12 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginStatus, user, _, checkLoginError := CheckLogin(w, r)
+	loginStatus, _, _, checkLoginError := CheckLogin(w, r)
 	if checkLoginError != nil {
 		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
 	}
 	if loginStatus {
-		fmt.Println("logged in userid is: ", user.ID)
 		RedirectToIndex(w, r)
 		return
 	}
@@ -162,11 +155,10 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		// errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		renderAuthPage(w, authError.Error())
 		return
-	} else if authStatus {
-		fmt.Println("User logged in successfully!")
 	}
-
-	sessionGenerator(w, r, userId)
+	if authStatus {
+		sessionGenerator(w, r, userId)
+	}
 
 	RedirectToIndex(w, r)
 }
@@ -237,15 +229,8 @@ func UpdateProfilePhoto(w http.ResponseWriter, r *http.Request) {
 	// Update a record while checking duplicates
 	updateError := models.UpdateProfilePhoto(user)
 	if updateError != nil {
-		if errors.Is(updateError, sql.ErrNoRows) {
-			// todo show toast
-			fmt.Println("Post already exists!")
-		} else {
-			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
-		}
+		errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 		return
-	} else {
-		fmt.Println("Post updated successfully!")
 	}
 
 	RedirectToIndex(w, r)
