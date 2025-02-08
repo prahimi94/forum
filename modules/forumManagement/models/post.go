@@ -31,7 +31,7 @@ type Post struct {
 	PostFiles        []PostFile                `json:"post_files"` // List of files related to the post
 }
 
-func InsertPost(post *Post, categoryIds []int, uploadedFilesAddresses []string) (int, error) {
+func InsertPost(post *Post, categoryIds []int, uploadedFiles map[string]string) (int, error) {
 	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
@@ -74,7 +74,7 @@ func InsertPost(post *Post, categoryIds []int, uploadedFilesAddresses []string) 
 		return -1, insertPostCategoriesErr
 	}
 
-	insertPostFilesErr := InsertPostFiles(int(lastInsertID), uploadedFilesAddresses, post.UserId, tx)
+	insertPostFilesErr := InsertPostFiles(int(lastInsertID), uploadedFiles, post.UserId, tx)
 	if insertPostFilesErr != nil {
 		tx.Rollback() // Rollback on error
 		return -1, insertPostFilesErr
@@ -89,7 +89,7 @@ func InsertPost(post *Post, categoryIds []int, uploadedFilesAddresses []string) 
 	return int(lastInsertID), nil
 }
 
-func UpdatePost(post *Post, categories []int, uploadedFilesAddresses []string, user_id int) error {
+func UpdatePost(post *Post, categories []int, uploadedFiles map[string]string, user_id int) error {
 	db := db.OpenDBConnection()
 	defer db.Close() // Close the connection after the function finishes
 
@@ -135,7 +135,7 @@ func UpdatePost(post *Post, categories []int, uploadedFilesAddresses []string, u
 		return insertPostCategoriesErr
 	}
 
-	insertPostFilesErr := InsertPostFiles(post.ID, uploadedFilesAddresses, user_id, tx)
+	insertPostFilesErr := InsertPostFiles(post.ID, uploadedFiles, user_id, tx)
 	if insertPostFilesErr != nil {
 		tx.Rollback() // Rollback on error
 		return insertPostFilesErr
@@ -207,7 +207,7 @@ func ReadAllPosts() ([]Post, error) {
         SELECT p.id as post_id, p.uuid as post_uuid, p.title as post_title, p.description as post_description, p.status as post_status, p.created_at as post_created_at, p.updated_at as post_updated_at, p.updated_by as post_updated_by,
 			u.id as user_id, u.name as user_name, u.username as user_username, u.email as user_email,
 			c.id as category_id, c.name as category_name,
-			IFNULL(pf.id, 0) as post_file_id, pf.file_address
+			IFNULL(pf.id, 0) as post_file_id, pf.file_uploaded_name, pf.file_real_name
 		FROM posts p
 			INNER JOIN users u
 				ON p.user_id = u.id
@@ -245,7 +245,7 @@ func ReadAllPosts() ([]Post, error) {
 			&post.CreatedAt, &post.UpdatedAt, &post.UpdatedBy, &post.UserId,
 			&user.Name, &user.Username, &user.Email,
 			&category.ID, &category.Name,
-			&postFile.ID, &postFile.FileAddress,
+			&postFile.ID, &postFile.FileUploadedName, &postFile.FileRealName,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("error scanning row: %v", err)
@@ -312,7 +312,7 @@ func ReadPostsByCategoryId(category_id int) ([]Post, error) {
         SELECT p.id as post_id, p.uuid as post_uuid, p.title as post_title, p.description as post_description, p.status as post_status, p.created_at as post_created_at, p.updated_at as post_updated_at, p.updated_by as post_updated_by,
 			u.id as user_id, u.name as user_name, u.username as user_username, u.email as user_email,
 			c.id as category_id, c.name as category_name,
-			IFNULL(pf.id, 0) as post_file_id, pf.file_address
+			IFNULL(pf.id, 0) as post_file_id, pf.file_uploaded_name, pf.file_real_name
 		FROM posts p
 			INNER JOIN users u
 				ON p.user_id = u.id
@@ -354,7 +354,7 @@ func ReadPostsByCategoryId(category_id int) ([]Post, error) {
 			&post.CreatedAt, &post.UpdatedAt, &post.UpdatedBy, &post.UserId,
 			&user.Name, &user.Username, &user.Email,
 			&category.ID, &category.Name,
-			&postFile.ID, &postFile.FileAddress,
+			&postFile.ID, &postFile.FileUploadedName, &postFile.FileRealName,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("error scanning row: %v", err)
@@ -423,7 +423,7 @@ func FilterPosts(searchTerm string) ([]Post, error) {
         SELECT p.id as post_id, p.uuid as post_uuid, p.title as post_title, p.description as post_description, p.status as post_status, p.created_at as post_created_at, p.updated_at as post_updated_at, p.updated_by as post_updated_by,
 			u.id as user_id, u.name as user_name, u.username as user_username, u.email as user_email,
 			c.id as category_id, c.name as category_name,
-			IFNULL(pf.id, 0) as post_file_id, pf.file_address
+			IFNULL(pf.id, 0) as post_file_id, pf.file_uploaded_name, pf.file_real_name
 		FROM posts p
 			INNER JOIN users u
 				ON p.user_id = u.id
@@ -462,7 +462,7 @@ func FilterPosts(searchTerm string) ([]Post, error) {
 			&post.CreatedAt, &post.UpdatedAt, &post.UpdatedBy, &post.UserId,
 			&user.Name, &user.Username, &user.Email,
 			&category.ID, &category.Name,
-			&postFile.ID, &postFile.FileAddress,
+			&postFile.ID, &postFile.FileUploadedName, &postFile.FileRealName,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("error scanning row: %v", err)
@@ -529,7 +529,7 @@ func ReadPostsByUserId(userId int) ([]Post, error) {
         SELECT p.id as post_id, p.uuid as post_uuid, p.title as post_title, p.description as post_description, p.status as post_status, p.created_at as post_created_at, p.updated_at as post_updated_at, p.updated_by as post_updated_by,
 			u.id as user_id, u.name as user_name, u.username as user_username, u.email as user_email,
 			c.id as category_id, c.name as category_name,
-			IFNULL(pf.id, 0) as post_file_id, pf.file_address
+			IFNULL(pf.id, 0) as post_file_id, pf.file_uploaded_name, pf.file_real_name
 		FROM posts p
 			INNER JOIN users u
 				ON p.user_id = u.id
@@ -568,7 +568,7 @@ func ReadPostsByUserId(userId int) ([]Post, error) {
 			&post.CreatedAt, &post.UpdatedAt, &post.UpdatedBy, &post.UserId,
 			&user.Name, &user.Username, &user.Email,
 			&category.ID, &category.Name,
-			&postFile.ID, &postFile.FileAddress,
+			&postFile.ID, &postFile.FileUploadedName, &postFile.FileRealName,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("error scanning row: %v", err)
@@ -635,7 +635,7 @@ func ReadPostsLikedByUserId(userId int) ([]Post, error) {
         SELECT p.id as post_id, p.uuid as post_uuid, p.title as post_title, p.description as post_description, p.status as post_status, p.created_at as post_created_at, p.updated_at as post_updated_at, p.updated_by as post_updated_by,
 			u.id as user_id, u.name as user_name, u.username as user_username, u.email as user_email,
 			c.id as category_id, c.name as category_name,
-			IFNULL(pf.id, 0) as post_file_id, pf.file_address
+			IFNULL(pf.id, 0) as post_file_id, pf.file_uploaded_name, pf.file_real_name
 		FROM posts p
 			INNER JOIN post_likes pl
 				ON pl.post_id = p.id
@@ -679,7 +679,7 @@ func ReadPostsLikedByUserId(userId int) ([]Post, error) {
 			&post.CreatedAt, &post.UpdatedAt, &post.UpdatedBy, &post.UserId,
 			&user.Name, &user.Username, &user.Email,
 			&category.ID, &category.Name,
-			&postFile.ID, &postFile.FileAddress,
+			&postFile.ID, &postFile.FileUploadedName, &postFile.FileRealName,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("error scanning row: %v", err)
@@ -748,7 +748,7 @@ func ReadPostById(postId int, checkLikeForUser int) (Post, error) {
 			(SELECT COUNT(DISTINCT id) from post_likes WHERE post_id = p.id AND status != 'delete' AND type = 'dislike') AS number_of_dislikes,
 			u.id as user_id, u.name as user_name, u.username as user_username, u.email as user_email,
 			c.id as category_id, c.name as category_name,
-			IFNULL(pf.id, 0) as post_file_id, pf.file_address,
+			IFNULL(pf.id, 0) as post_file_id, pf.file_uploaded_name, pf.file_real_name,
 			CASE 
                 WHEN EXISTS (SELECT 1 FROM post_likes WHERE post_id = p.id AND status != 'delete' AND type = 'like' AND user_id = ?) THEN 1
                 ELSE 0
@@ -792,7 +792,7 @@ func ReadPostById(postId int, checkLikeForUser int) (Post, error) {
 			&post.NumberOfLikes, &post.NumberOfDislikes,
 			&post.UserId, &user.Name, &user.Username, &user.Email,
 			&category.ID, &category.Name,
-			&postFile.ID, &postFile.FileAddress,
+			&postFile.ID, &postFile.FileUploadedName, &postFile.FileRealName,
 			&post.IsLikedByUser, &post.IsDislikedByUser,
 		)
 		if err != nil {
@@ -853,7 +853,7 @@ func ReadPostByUUID(postUUID string, checkLikeForUser int) (Post, error) {
 			(SELECT COUNT(DISTINCT id) from post_likes WHERE post_id = p.id AND status != 'delete' AND type = 'dislike') AS number_of_dislikes,
 			u.id as user_id, u.name as user_name, u.username as user_username, u.email as user_email,
 			c.id as category_id, c.name as category_name,
-			IFNULL(pf.id, 0) as post_file_id, pf.file_address,
+			IFNULL(pf.id, 0) as post_file_id, pf.file_uploaded_name, pf.file_real_name,
 			CASE 
                 WHEN EXISTS (SELECT 1 FROM post_likes WHERE post_id = p.id AND status != 'delete' AND type = 'like' AND user_id = ?) THEN 1
                 ELSE 0
@@ -897,7 +897,7 @@ func ReadPostByUUID(postUUID string, checkLikeForUser int) (Post, error) {
 			&post.NumberOfLikes, &post.NumberOfDislikes,
 			&post.UserId, &user.Name, &user.Username, &user.Email,
 			&category.ID, &category.Name,
-			&postFile.ID, &postFile.FileAddress,
+			&postFile.ID, &postFile.FileUploadedName, &postFile.FileRealName,
 			&post.IsLikedByUser, &post.IsDislikedByUser,
 		)
 		if err != nil {
@@ -952,7 +952,7 @@ func ReadPostByUserID(postId int, userID int) (Post, error) {
         SELECT p.id as post_id, p.uuid as post_uuid, p.title as post_title, p.description as post_description, p.status as post_status, p.created_at as post_created_at, p.updated_at as post_updated_at, p.updated_by as post_updated_by,
 			p.user_id as post_user_id, u.id as user_id, u.name as user_name, u.username as user_username, u.email as user_email,
 			c.id as category_id, c.name as category_name,
-			IFNULL(pf.id, 0) as post_file_id, pf.file_address,
+			IFNULL(pf.id, 0) as post_file_id, pf.file_uploaded_name, pf.file_real_name,
 			COALESCE(pl.type, '')
 		FROM posts p
 			INNER JOIN users u
@@ -991,7 +991,7 @@ func ReadPostByUserID(postId int, userID int) (Post, error) {
 			&post.CreatedAt, &post.UpdatedAt, &post.UpdatedBy, &post.UserId,
 			&user.ID, &user.Name, &user.Username, &user.Email,
 			&category.ID, &category.Name,
-			&postFile.ID, &postFile.FileAddress,
+			&postFile.ID, &postFile.FileUploadedName, &postFile.FileRealName,
 			&Type,
 		)
 		if err != nil {
@@ -1042,6 +1042,5 @@ func ReadPostByUserID(postId int, userID int) (Post, error) {
 		return Post{}, fmt.Errorf("row iteration error: %v", err)
 	}
 
-	fmt.Println("im here")
 	return post, nil
 }

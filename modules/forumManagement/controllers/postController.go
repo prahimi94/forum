@@ -511,7 +511,7 @@ func SubmitPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var uploadedFilesAddresses []string
+	uploadedFiles := make(map[string]string)
 
 	for _, handler := range files {
 		file, err := handler.Open()
@@ -526,13 +526,13 @@ func SubmitPost(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("MIME Header: %+v\n", handler.Header)
 
 		// Call your file upload function
-		fileAddress, err := utils.FileUpload(file, handler)
+		uploadedFile, err := utils.FileUpload(file, handler)
 		if err != nil {
 			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 			return
 		}
 
-		uploadedFilesAddresses = append(uploadedFilesAddresses, fileAddress)
+		uploadedFiles[handler.Filename] = uploadedFile
 	}
 
 	post := &models.Post{
@@ -554,7 +554,7 @@ func SubmitPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Insert a record while checking duplicates
-	_, insertError := models.InsertPost(post, categoryIds, uploadedFilesAddresses)
+	_, insertError := models.InsertPost(post, categoryIds, uploadedFiles)
 	if insertError != nil {
 		if errors.Is(insertError, sql.ErrNoRows) {
 			// todo show toast
@@ -685,7 +685,7 @@ func UpdatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var uploadedFilesAddresses []string
+	uploadedFiles := make(map[string]string)
 
 	for _, handler := range files {
 		file, err := handler.Open()
@@ -700,13 +700,13 @@ func UpdatePost(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("MIME Header: %+v\n", handler.Header)
 
 		// Call your file upload function
-		fileAddress, err := utils.FileUpload(file, handler)
+		uploadedFile, err := utils.FileUpload(file, handler)
 		if err != nil {
 			errorManagementControllers.HandleErrorPage(w, r, errorManagementControllers.InternalServerError)
 			return
 		}
 
-		uploadedFilesAddresses = append(uploadedFilesAddresses, fileAddress)
+		uploadedFiles[handler.Filename] = uploadedFile
 	}
 
 	post := &models.Post{
@@ -729,7 +729,7 @@ func UpdatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Update a record while checking duplicates
-	updateError := models.UpdatePost(post, categoryIds, uploadedFilesAddresses, loginUser.ID)
+	updateError := models.UpdatePost(post, categoryIds, uploadedFiles, loginUser.ID)
 	if updateError != nil {
 		if errors.Is(updateError, sql.ErrNoRows) {
 			// todo show toast

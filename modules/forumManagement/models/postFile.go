@@ -8,28 +8,31 @@ import (
 
 // Post File struct represents the user data model
 type PostFile struct {
-	ID          int       `json:"id"`
-	PostId      int       `json:"post_id"`
-	FileAddress *string   `json:"file_address"`
-	Status      string    `json:"status"`
-	CreatedAt   time.Time `json:"created_at"`
-	CreatedBy   int       `json:"created_by"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	UpdatedBy   int       `json:"updated_by"`
+	ID               int       `json:"id"`
+	PostId           int       `json:"post_id"`
+	FileUploadedName *string   `json:"file_uploaded_name"`
+	FileRealName     *string   `json:"file_real_name"`
+	Status           string    `json:"status"`
+	CreatedAt        time.Time `json:"created_at"`
+	CreatedBy        int       `json:"created_by"`
+	UpdatedAt        time.Time `json:"updated_at"`
+	UpdatedBy        int       `json:"updated_by"`
 }
 
-func InsertPostFiles(post_id int, filesAddresses []string, user_id int, tx *sql.Tx) error {
+func InsertPostFiles(post_id int, uploadedFiles map[string]string, user_id int, tx *sql.Tx) error {
 	// Prepare the bulk insert query for post_categories
-	if len(filesAddresses) > 0 {
-		query := `INSERT INTO post_files (post_id, file_address, created_by) VALUES `
-		values := make([]any, 0, len(filesAddresses)*3)
+	if len(uploadedFiles) > 0 {
+		query := `INSERT INTO post_files (post_id, file_real_name, file_uploaded_name, created_by) VALUES `
+		values := make([]any, 0, len(uploadedFiles)*3)
 
-		for i, filesAddress := range filesAddresses {
+		for i := 0; i < len(uploadedFiles); i++ {
 			if i > 0 {
 				query += ", "
 			}
-			query += "(?, ?, ?)"
-			values = append(values, post_id, filesAddress, user_id)
+			query += "(?, ?, ?, ?)"
+			for key, value := range uploadedFiles {
+				values = append(values, post_id, key, value, user_id)
+			}
 		}
 		query += ";"
 

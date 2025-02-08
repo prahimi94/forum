@@ -51,7 +51,8 @@ CREATE TABLE "posts" (
 CREATE TABLE "post_files" (
   "id" INTEGER PRIMARY KEY,
   "post_id" INTEGER NOT NULL,
-  "file_address" TEXT NOT NULL,
+  "file_uploaded_name" TEXT NOT NULL,
+  "file_real_name" TEXT NOT NULL,
   "status" TEXT NOT NULL CHECK ("status" IN ('enable', 'delete')) DEFAULT 'enable',
   "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "created_by" INTEGER NOT NULL,
